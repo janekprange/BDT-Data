@@ -16,24 +16,26 @@ class SetupExperiment:
         model_path = hf_hub_download(
             repo_id=model_name_or_path, filename=model_basename
         )
+        # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/
         self.llama = Llama(
             model_path=model_path,
-            n_ctx=40960,  # Context window
-            n_parts=-1,  # Number of parts to split the model into. If -1, the number of parts is automatically determined.
+            # n_ctx=40960,  # Context window
+            n_gpu_layers=-1,  # Number of layers to offload to GPU (-ngl). If -1, all layers are offloaded.
             # n_threads=64, # CPU cores
             # n_batch=5120, # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
             # n_gpu_layers=1, # Change this value based on your model and your GPU VRAM pool.
             # tensor_split=8, #List of floats to split the model across multiple GPUs. If None, the model is not split
-            # verbose=False, #-> Sadly this does not work due to an issue in the library https://github.com/abetlen/llama-cpp-python/issues/729
+            verbose=False,  # Print verbose output to stderr. -> Sadly this does not work due to an issue in the library https://github.com/abetlen/llama-cpp-python/issues/729
         )
 
     def _prompt(self, prompt: str) -> str:
         if self.skip_prompting:
             return f"skipped prompting for: {prompt}"
 
+        # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/#llama_cpp.Llama.create_completion
         response = self.llama(
             prompt=prompt,
-            max_tokens=256,
+            max_tokens=10,
             temperature=0.5,
             top_p=0.95,
             repeat_penalty=1.2,

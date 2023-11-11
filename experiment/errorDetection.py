@@ -60,7 +60,7 @@ class ErrorDetection(SetupExperiment):
         return classifications
 
     # TODO: why "attr", not "attr: val"?
-    def prompt_table_few_shot(
+    def few_shot(
         self,
         promt_template: str = "Is there an error in {attr}?\n\n{example}\n{context}?",
     ) -> List[int]:
@@ -71,7 +71,6 @@ class ErrorDetection(SetupExperiment):
             description="Attributes Prompted",
         )
         display(progressBar)
-        err_table = self.compare_dataframes_by_row(self.dirty_data, self.clean_data)
         # generate table
         classifications: List[int] = []
         for _, row in self.dirty_data.iterrows():
@@ -80,7 +79,7 @@ class ErrorDetection(SetupExperiment):
                 # get examples
                 examples = []
                 for _ in range(self.max_row_count):
-                    row_str = self.sample_example(self.dirty_data, err_table)
+                    row_str = self.sample_example()
                     examples.append(row_str)
 
                 # create prompt
