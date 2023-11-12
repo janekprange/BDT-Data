@@ -100,8 +100,14 @@ class ErrorDetection(SetupExperiment):
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     classifications.append(1)
+                    self.logger.log_prompting_result(
+                        id=f"ed_zs-{row_index}-{column}", predicted=1, correct=-1
+                    )
                 else:
                     classifications.append(0)
+                    self.logger.log_prompting_result(
+                        id=f"ed_zs-{row_index}-{column}", predicted=0, correct=-1
+                    )
 
                 progressBar.value += 1
 

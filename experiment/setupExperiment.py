@@ -29,7 +29,7 @@ class SetupExperiment:
             verbose=False,  # Print verbose output to stderr. -> Sadly this does not work due to an issue in the library https://github.com/abetlen/llama-cpp-python/issues/729
         )
 
-    def _prompt(self, prompt: str, id: str, logger: Logger):
+    def _prompt(self, prompt: str, id: str, logger: Logger) -> str:
         if self.skip_prompting:
             return f"skipped prompting for: {prompt}"
 
@@ -44,7 +44,8 @@ class SetupExperiment:
             stop=["USER:"],  # Dynamic stopping when such token is detected.
             echo=False,  # return the prompt
         )
-        logger.log_response(id=id, response=response)
+        log_response = {**response, "prompt": prompt}  # type: ignore
+        logger.log_response(id=id, response=log_response)
 
         return response["choices"][0]["text"]  # type: ignore
 
