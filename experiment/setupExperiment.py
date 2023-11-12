@@ -19,7 +19,7 @@ class SetupExperiment:
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/
         self.llama = Llama(
             model_path=model_path,
-            # n_ctx=40960,  # Context window
+            n_ctx=1024,  # Context window (used to be 40960)
             n_gpu_layers=-1,  # Number of layers to offload to GPU (-ngl). If -1, all layers are offloaded.
             # n_threads=64, # CPU cores
             # n_batch=5120, # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
@@ -44,52 +44,46 @@ class SetupExperiment:
             echo=False,  # return the prompt
         )
         return response["choices"][0]["text"]  # type: ignore
+    
 
-    def compare_dataframes_by_row(
-        self, df1: pd.DataFrame, df2: pd.DataFrame
-    ) -> pd.DataFrame:
-        # Check if the DataFrames have the same shape
-        if not df1.shape == df2.shape:
-            raise ValueError(
-                "DataFrames must have the same shape for row-wise comparison."
-            )
 
-        # Compare the two DataFrames element-wise and create a Boolean DataFrame
-        comparison_result = df1 != df2
-
-        return comparison_result
-
-    def ground_truth_as_int(self, gt: pd.DataFrame) -> pd.DataFrame:
-        new_df = gt.astype(int)
-        return new_df.values.ravel().tolist()
-
-    def serialize_row(self, row: pd.Series) -> str:
-        result = ""
-        for index, value in row.items():
-            result += f"{index}: {value} "
-        return result
-
-    def f1_score(self, y_true: List[int], y_pred: List[int]) -> float:
-        true_positives = sum(1 for a, b in zip(y_true, y_pred) if a == b == 1)
-        false_positives = sum(1 for a, b in zip(y_true, y_pred) if a == 0 and b == 1)
-        false_negatives = sum(1 for a, b in zip(y_true, y_pred) if a == 1 and b == 0)
-
-        if true_positives == 0:
-            return 0.0  # Handle the case where true_positives is 0
-
-        precision = (
-            true_positives / (true_positives + false_positives)
-            if (true_positives + false_positives) > 0
-            else 0.0
-        )
-        recall = (
-            true_positives / (true_positives + false_negatives)
-            if (true_positives + false_negatives) > 0
-            else 0.0
+def compare_dataframes_by_row(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    # Check if the DataFrames have the same shape
+    if not df1.shape == df2.shape:
+        raise ValueError(
+            "DataFrames must have the same shape for row-wise comparison."
         )
 
-        if precision + recall == 0:
-            return 0.0
+    # Compare the two DataFrames element-wise and create a Boolean DataFrame
+    comparison_result = df1 != df2
 
-        f1 = 2 * (precision * recall) / (precision + recall)
-        return f1
+    return comparison_result
+
+def ground_truth_as_int(gt: pd.DataFrame) -> pd.DataFrame:
+    new_df = gt.astype(int)
+    return new_df.values.ravel().tolist()
+
+def f1_score(y_true: List[int], y_pred: List[int]) -> float:
+    true_positives = sum(1 for a, b in zip(y_true, y_pred) if a == b == 1)
+    false_positives = sum(1 for a, b in zip(y_true, y_pred) if a == 0 and b == 1)
+    false_negatives = sum(1 for a, b in zip(y_true, y_pred) if a == 1 and b == 0)
+
+    if true_positives == 0:
+        return 0.0  # Handle the case where true_positives is 0
+
+    precision = (
+        true_positives / (true_positives + false_positives)
+        if (true_positives + false_positives) > 0
+        else 0.0
+    )
+    recall = (
+        true_positives / (true_positives + false_negatives)
+        if (true_positives + false_negatives) > 0
+        else 0.0
+    )
+
+    if precision + recall == 0:
+        return 0.0
+
+    f1 = 2 * (precision * recall) / (precision + recall)
+    return f1
