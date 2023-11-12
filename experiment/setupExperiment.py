@@ -2,6 +2,7 @@ from huggingface_hub import hf_hub_download
 from llama_cpp import Llama
 import pandas as pd
 from typing import List
+from .experimentLogger import Logger
 
 
 class SetupExperiment:
@@ -28,7 +29,7 @@ class SetupExperiment:
             verbose=False,  # Print verbose output to stderr. -> Sadly this does not work due to an issue in the library https://github.com/abetlen/llama-cpp-python/issues/729
         )
 
-    def _prompt(self, prompt: str) -> str:
+    def _prompt(self, prompt: str, id: str, logger: Logger):
         if self.skip_prompting:
             return f"skipped prompting for: {prompt}"
 
@@ -43,25 +44,26 @@ class SetupExperiment:
             stop=["USER:"],  # Dynamic stopping when such token is detected.
             echo=False,  # return the prompt
         )
+        logger.log_response(id=id, response=response)
+
         return response["choices"][0]["text"]  # type: ignore
-    
 
 
 def compare_dataframes_by_row(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     # Check if the DataFrames have the same shape
     if not df1.shape == df2.shape:
-        raise ValueError(
-            "DataFrames must have the same shape for row-wise comparison."
-        )
+        raise ValueError("DataFrames must have the same shape for row-wise comparison.")
 
     # Compare the two DataFrames element-wise and create a Boolean DataFrame
     comparison_result = df1 != df2
 
     return comparison_result
 
+
 def ground_truth_as_int(gt: pd.DataFrame) -> pd.DataFrame:
-    new_df = gt.astype(int)
+    new_df = gt.astype(dtype="int")
     return new_df.values.ravel().tolist()
+
 
 def f1_score(y_true: List[int], y_pred: List[int]) -> float:
     true_positives = sum(1 for a, b in zip(y_true, y_pred) if a == b == 1)

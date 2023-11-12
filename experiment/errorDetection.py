@@ -6,6 +6,7 @@ from IPython.display import display
 from datetime import datetime
 from .setupExperiment import SetupExperiment
 from DataSet import DataSet, serialize_row
+from .experimentLogger import Logger
 
 
 class ErrorDetection(SetupExperiment):
@@ -14,20 +15,20 @@ class ErrorDetection(SetupExperiment):
         dataset: DataSet,
         skip_prompting: bool = False,
         n_rows: int = 10,
-        logging_path: str | None = None,
+        logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
     ) -> None:
         super().__init__(skip_prompting)
         self.max_row_count = n_rows
         self.dataset = dataset
-        # self.logger = Logger(logging_path)
+        self.logger = Logger(name="ErrorDetection", path=logging_path)
 
     def zero_shot(
         self,
         dirty_data: pd.DataFrame | None = None,
         prompt_template: str = "Is there an error in {attr}?\n{context}?",
         random_samples: int = 100,  # TODO: why is self.max_row_count not used here?
-        debug_messages: bool = False,
     ) -> List[int]:
+        self.logger.debug("Started zero shot")
         if dirty_data is None:
             dirty_data, _ = self.dataset.random_sample(random_samples)
 
@@ -40,20 +41,16 @@ class ErrorDetection(SetupExperiment):
 
         # generate table
         classifications: List[int] = []
-        for _, row in dirty_data.iterrows():
+        for row_index, row in dirty_data.iterrows():
             serialized_row = serialize_row(row)
-            for _, (attribute, value) in enumerate(row.items()):
+            for cell_index, (attribute, value) in enumerate(row.items()):
                 # create prompt
                 prompt = prompt_template.format(
                     attr=attribute, val=value, context=serialized_row
                 )
-                response = self._prompt(prompt)
-
-                if debug_messages:
-                    print(prompt)
-                    print("--------------------")
-                    print(response)
-                    print("====================")
+                response = self._prompt(
+                    prompt, id=f"ed_zs-{row_index}-{cell_index}", logger=self.logger
+                )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
@@ -62,7 +59,7 @@ class ErrorDetection(SetupExperiment):
                     classifications.append(0)
 
                 progress_bar.value += 1
-
+        self.logger.debug("Finished zero shot")
         return classifications
 
     def few_shot(
@@ -71,8 +68,8 @@ class ErrorDetection(SetupExperiment):
         promt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}?",
         random_samples: int = 100,  # TODO: why is self.max_row_count not used here?
         example_count: int = 2,
-        debug_messages: bool = False,
     ) -> List[int]:
+        self.logger.debug("Started few shot")
         if dirty_data is None:
             dirty_data, _ = self.dataset.random_sample(random_samples)
 
@@ -84,7 +81,7 @@ class ErrorDetection(SetupExperiment):
         display(progressBar)
         # generate table
         classifications: List[int] = []
-        for _, row in dirty_data.iterrows():
+        for row_index, row in dirty_data.iterrows():
             serialized_row = serialize_row(row)
             for column, (attribute, _) in enumerate(row.items()):
                 # get examples
@@ -96,13 +93,9 @@ class ErrorDetection(SetupExperiment):
                 prompt = promt_template.format(
                     attr=attribute, context=serialized_row, example=examples
                 )
-                response = self._prompt(prompt)
-
-                if debug_messages:
-                    print(prompt)
-                    print("--------------------")
-                    print(response)
-                    print("====================")
+                response = self._prompt(
+                    prompt, id=f"ed_zs-{row_index}-{column}", logger=self.logger
+                )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
@@ -112,4 +105,5 @@ class ErrorDetection(SetupExperiment):
 
                 progressBar.value += 1
 
+        self.logger.debug("Finished few shot")
         return classifications
