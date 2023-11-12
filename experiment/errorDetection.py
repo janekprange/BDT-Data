@@ -55,8 +55,14 @@ class ErrorDetection(SetupExperiment):
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     classifications.append(1)
+                    self.logger.log_prompting_result(
+                        id=f"ed_zs-{row_index}-{cell_index}", predicted=1, correct=-1
+                    )
                 else:
                     classifications.append(0)
+                    self.logger.log_prompting_result(
+                        id=f"ed_zs-{row_index}-{cell_index}", predicted=0, correct=-1
+                    )
 
                 progress_bar.value += 1
         self.logger.debug("Finished zero shot")
@@ -94,19 +100,19 @@ class ErrorDetection(SetupExperiment):
                     attr=attribute, context=serialized_row, example=examples
                 )
                 response = self._prompt(
-                    prompt, id=f"ed_zs-{row_index}-{column}", logger=self.logger
+                    prompt, id=f"ed_fs-{row_index}-{column}", logger=self.logger
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     classifications.append(1)
                     self.logger.log_prompting_result(
-                        id=f"ed_zs-{row_index}-{column}", predicted=1, correct=-1
+                        id=f"ed_fs-{row_index}-{column}", predicted=1, correct=-1
                     )
                 else:
                     classifications.append(0)
                     self.logger.log_prompting_result(
-                        id=f"ed_zs-{row_index}-{column}", predicted=0, correct=-1
+                        id=f"ed_fs-{row_index}-{column}", predicted=0, correct=-1
                     )
 
                 progressBar.value += 1
