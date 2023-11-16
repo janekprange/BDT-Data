@@ -18,7 +18,9 @@ class Logger:
 
         if not os.path.isfile(f"{path}/experiment-results.csv"):
             with open(f"{path}/experiment-results.csv", "w") as file:
-                file.write(f"Name, Dataset, Number of Rows, Runtime, F1, Precision \n")
+                file.write(
+                    f"Name, Dataset, Number of Rows, Runtime, F1, True pos, True neg, False pos, False neg \n"
+                )
 
         logging.basicConfig(
             level=level_file,
@@ -65,7 +67,12 @@ class Logger:
         n_rows: int,
         dataset: str,
         f1: float,
-        precision: float,
+        true_pos: int,
+        true_neg: int,
+        false_pos: int,
+        false_neg: int,
     ):
         with open(f"{self.path}/experiment-results.csv", "a") as file:
-            file.write(f"{name}, {dataset}, {n_rows}, {runtime}, {f1}, {precision} \n")
+            file.write(
+                f"{name}, {dataset}, {n_rows}, {runtime}, {f1}, {true_pos}, {true_neg}, {false_pos}, {false_neg} \n"
+            )

@@ -1,12 +1,13 @@
-from typing import Literal, List
+from typing import Tuple, List
 import pandas as pd
-import numpy as np
 from ipywidgets import IntProgress
 from IPython.display import display
 from datetime import datetime
 from .setupExperiment import SetupExperiment
 from DataSet import DataSet, serialize_row
 from .experimentLogger import Logger
+from sklearn.metrics import f1_score
+import time
 
 
 class ErrorDetection(SetupExperiment):
@@ -14,82 +15,146 @@ class ErrorDetection(SetupExperiment):
         self,
         dataset: DataSet,
         skip_prompting: bool = False,
-        n_rows: int = 10,
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
     ) -> None:
         super().__init__(skip_prompting)
-        self.max_row_count = n_rows
         self.dataset = dataset
         self.logger = Logger(name="ErrorDetection", path=logging_path)
 
     def zero_shot(
         self,
-        dirty_data: pd.DataFrame | None = None,
+        data_indeces: List[int] | None = None,
         prompt_template: str = "Is there an error in {attr}?\n{context}?",
-        random_samples: int = 100,  # TODO: why is self.max_row_count not used here?
-    ) -> List[int]:
-        self.logger.debug("Started zero shot")
-        if dirty_data is None:
-            dirty_data, _ = self.dataset.random_sample(random_samples)
+        n_samples: int = 100,
+    ) -> Tuple[float, float]:
+        self.logger.info("Started zero shot for {n_samples} rows")
+        dirty_data: pd.DataFrame
+        clean_data: pd.DataFrame
+        if data_indeces is None:
+            dirty_data, clean_data = self.dataset.random_sample(n_samples)
+        else:
+            n_samples = len(data_indeces)
+            dirty_data = self.dataset.get(dirty=True).iloc(data_indeces)
+            clean_data = self.dataset.get(dirty=False).iloc(data_indeces)
 
         progress_bar = IntProgress(
             min=0,
-            max=min(dirty_data.shape[0], self.max_row_count) * dirty_data.shape[1],
-            description="Attributes Prompted",
+            max=min(dirty_data.shape[0], n_samples) * dirty_data.shape[1],
+            description="Attributes Prompted Error Detection Zero Shot",
         )
         display(progress_bar)
 
-        # generate table
-        classifications: List[int] = []
+        result = {
+            "true_pos": 0,
+            "false_pos": 0,
+            "true_neg": 0,
+            "false_neg": 0,
+        }
+        y_true: List[int] = []
+        y_pred: List[int] = []
+        start_time = time.time()
+
         for row_index, row in dirty_data.iterrows():
             serialized_row = serialize_row(row)
-            for cell_index, (attribute, value) in enumerate(row.items()):
+            for _, (attribute, value) in enumerate(row.items()):
                 # create prompt
                 prompt = prompt_template.format(
                     attr=attribute, val=value, context=serialized_row
                 )
+                correct_value: bool = (
+                    clean_data.loc[[row_index]][attribute].values[0] != value
+                )
+                y_true.append(int(correct_value))
+                timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
-                    prompt, id=f"ed_zs-{row_index}-{cell_index}", logger=self.logger
+                    prompt,
+                    id=f"ed_zs-{timestamp}",
+                    logger=self.logger,
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
-                    classifications.append(1)
                     self.logger.log_prompting_result(
-                        id=f"ed_zs-{row_index}-{cell_index}", predicted=1, correct=-1
+                        id=f"ed_zs-{timestamp}",
+                        predicted=1,
+                        correct=int(correct_value),
                     )
+                    y_pred.append(1)
+                    if correct_value:
+                        result["true_pos"] += 1
+                    else:
+                        result["false_pos"] += 1
                 else:
-                    classifications.append(0)
                     self.logger.log_prompting_result(
-                        id=f"ed_zs-{row_index}-{cell_index}", predicted=0, correct=-1
+                        id=f"ed_zs-{timestamp}",
+                        predicted=0,
+                        correct=int(correct_value),
                     )
+                    y_pred.append(0)
+                    if correct_value:
+                        result["false_neg"] += 1
+                    else:
+                        result["true_neg"] += 1
 
                 progress_bar.value += 1
-        self.logger.debug("Finished zero shot")
-        return classifications
+        runtime = time.time() - start_time
+        runtimeString = time.strftime("%H:%M:%S", time.gmtime(runtime))
+        f1 = float(f1_score(y_true, y_pred, average="binary", pos_label=1))
+        self.logger.log_experiment_result(
+            name="Error Detection zero shot",
+            runtime=runtimeString,
+            n_rows=n_samples,
+            dataset=self.dataset.name,
+            f1=f1,
+            true_pos=result["true_pos"],
+            true_neg=result["true_neg"],
+            false_pos=result["false_pos"],
+            false_neg=result["false_neg"],
+        )
+        self.logger.info(
+            f"Finished zero shot in {time.strftime('%H:%M:%S', time.gmtime(runtime))}"
+        )
+        return runtime, f1
 
     def few_shot(
         self,
-        dirty_data: pd.DataFrame | None = None,
+        data_indeces: List[int] | None = None,
         promt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}?",
-        random_samples: int = 100,  # TODO: why is self.max_row_count not used here?
+        n_samples: int = 100,
         example_count: int = 2,
-    ) -> List[int]:
-        self.logger.debug("Started few shot")
-        if dirty_data is None:
-            dirty_data, _ = self.dataset.random_sample(random_samples)
+    ) -> Tuple[float, float]:
+        self.logger.info(
+            f"Started few shot for {n_samples} rows with {example_count} examples"
+        )
+        dirty_data: pd.DataFrame
+        clean_data: pd.DataFrame
+        if data_indeces is None:
+            dirty_data, clean_data = self.dataset.random_sample(n_samples)
+        else:
+            n_samples = len(data_indeces)
+            dirty_data = self.dataset.get(dirty=True).iloc(data_indeces)
+            clean_data = self.dataset.get(dirty=False).iloc(data_indeces)
 
         progressBar = IntProgress(
             min=0,
-            max=min(dirty_data.shape[0], self.max_row_count) * dirty_data.shape[1],
-            description="Attributes Prompted",
+            max=min(dirty_data.shape[0], n_samples) * dirty_data.shape[1],
+            description="Attributes Prompted Error Detection Few Shot",
         )
         display(progressBar)
-        # generate table
-        classifications: List[int] = []
+
+        result = {
+            "true_pos": 0,
+            "false_pos": 0,
+            "true_neg": 0,
+            "false_neg": 0,
+        }
+        y_true: List[int] = []
+        y_pred: List[int] = []
+        start_time = time.time()
+
         for row_index, row in dirty_data.iterrows():
             serialized_row = serialize_row(row)
-            for column, (attribute, _) in enumerate(row.items()):
+            for column, (attribute, value) in enumerate(row.items()):
                 # get examples
                 examples = self.dataset.generate_examples(
                     column_id=column, amount=example_count
@@ -99,23 +164,51 @@ class ErrorDetection(SetupExperiment):
                 prompt = promt_template.format(
                     attr=attribute, context=serialized_row, example=examples
                 )
+                correct_value: bool = (
+                    clean_data.loc[[row_index]][attribute].values[0] != value
+                )
+                y_true.append(int(correct_value))
+                timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
-                    prompt, id=f"ed_fs-{row_index}-{column}", logger=self.logger
+                    prompt, id=f"ed_fs-{timestamp}", logger=self.logger
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
-                    classifications.append(1)
                     self.logger.log_prompting_result(
-                        id=f"ed_fs-{row_index}-{column}", predicted=1, correct=-1
+                        id=f"ed_fs-{timestamp}", predicted=1, correct=int(correct_value)
                     )
+                    y_pred.append(1)
+                    if correct_value:
+                        result["true_pos"] += 1
+                    else:
+                        result["false_pos"] += 1
                 else:
-                    classifications.append(0)
                     self.logger.log_prompting_result(
-                        id=f"ed_fs-{row_index}-{column}", predicted=0, correct=-1
+                        id=f"ed_fs-{timestamp}", predicted=0, correct=int(correct_value)
                     )
+                    y_pred.append(0)
+                    if correct_value:
+                        result["false_neg"] += 1
+                    else:
+                        result["true_neg"] += 1
 
                 progressBar.value += 1
-
-        self.logger.debug("Finished few shot")
-        return classifications
+        runtime = time.time() - start_time
+        runtimeString = time.strftime("%H:%M:%S", time.gmtime(runtime))
+        f1 = float(f1_score(y_true, y_pred, average="binary", pos_label=1))
+        self.logger.log_experiment_result(
+            name="Error Detection few shot",
+            runtime=runtimeString,
+            n_rows=n_samples,
+            dataset=self.dataset.name,
+            f1=f1,
+            true_pos=result["true_pos"],
+            true_neg=result["true_neg"],
+            false_pos=result["false_pos"],
+            false_neg=result["false_neg"],
+        )
+        self.logger.info(
+            f"Finished few shot in {time.strftime('%H:%M:%S', time.gmtime(runtime))}"
+        )
+        return runtime, f1

@@ -13,9 +13,10 @@ def serialize_row(row: pd.Series) -> str:
 class DataSet:
     """This class encasulates all the functionality related to the datasets."""
 
-    def __init__(self, path_dirty: str, path_clean: str):
+    def __init__(self, path_dirty: str, path_clean: str, name: str):
         self.dirty_set: pd.DataFrame = pd.read_csv(path_dirty)
         self.clean_set: pd.DataFrame = pd.read_csv(path_clean)
+        self.name = name
 
     def get(self, dirty: bool) -> pd.DataFrame:
         """Returns a dataset as an Dataframes based on the calling object.
@@ -56,16 +57,20 @@ class DataSet:
 
 class Flights(DataSet):
     def __init__(self):
-        super().__init__("./prepared/flights_dirty.csv", "./prepared/flights_clean.csv")
+        super().__init__(
+            "./prepared/flights_dirty.csv", "./prepared/flights_clean.csv", "Flights"
+        )
 
 
 class Food(DataSet):
     def __init__(self):
-        super().__init__("./prepared/food_dirty.csv", "./prepared/food_clean.csv")
+        super().__init__(
+            "./prepared/food_dirty.csv", "./prepared/food_clean.csv", "Food"
+        )
 
 
 class Hospital(DataSet):
     def __init__(self):
         super().__init__(
-            "./prepared/hospital_dirty.csv", "./prepared/hospital_clean.csv"
+            "./prepared/hospital_dirty.csv", "./prepared/hospital_clean.csv", "Hospital"
         )
