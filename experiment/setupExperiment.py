@@ -1,18 +1,32 @@
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama
 import pandas as pd
-from typing import List
+from typing import List, Literal
 from .experimentLogger import Logger
 
 
 class SetupExperiment:
-    def __init__(self, skip_prompting: bool) -> None:
+    def __init__(
+        self,
+        skip_prompting: bool,
+        model_size: Literal["small", "medium", "large"] = "large",
+    ) -> None:
         self.skip_prompting = skip_prompting
         if skip_prompting:
             return
         # select the model
         model_name_or_path = "TheBloke/Llama-2-13B-chat-GGUF"
-        model_basename = "llama-2-13b-chat.Q5_K_M.gguf"
+        model_basename = ""
+        match model_size:
+            case "small":
+                model_basename = "llama-2-13b-chat.Q3_K_S.gguf"
+            case "medium":
+                model_basename = "llama-2-13b-chat.Q4_K_M.gguf"
+            case "large":
+                model_basename = "llama-2-13b-chat.Q5_K_M.gguf"
+            case _:
+                raise ValueError("Unknown model size")
+
         # download the model
         model_path = hf_hub_download(
             repo_id=model_name_or_path, filename=model_basename
