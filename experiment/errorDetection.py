@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Union
 import pandas as pd
 from ipywidgets import IntProgress
 from IPython.display import display
@@ -26,6 +26,7 @@ class ErrorDetection(SetupExperiment):
         data_indeces: List[int] | None = None,
         prompt_template: str = "Is there an error in {attr}?\n{context}?",
         n_samples: int = 100,
+        id: Union[int, str] = "",
     ) -> Tuple[float, float]:
         self.logger.info("Started zero shot for {n_samples} rows")
         dirty_data: pd.DataFrame
@@ -68,14 +69,14 @@ class ErrorDetection(SetupExperiment):
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
                     prompt,
-                    id=f"ed_zs-{timestamp}",
+                    id=f"ed_zs{id}-{timestamp}",
                     logger=self.logger,
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     self.logger.log_prompting_result(
-                        id=f"ed_zs-{timestamp}",
+                        id=f"ed_zs{id}-{timestamp}",
                         predicted=1,
                         correct=int(correct_value),
                     )
@@ -86,7 +87,7 @@ class ErrorDetection(SetupExperiment):
                         result["false_pos"] += 1
                 else:
                     self.logger.log_prompting_result(
-                        id=f"ed_zs-{timestamp}",
+                        id=f"ed_zs{id}-{timestamp}",
                         predicted=0,
                         correct=int(correct_value),
                     )
@@ -104,12 +105,14 @@ class ErrorDetection(SetupExperiment):
             name="Error Detection zero shot",
             runtime=runtimeString,
             n_rows=n_samples,
+            n_examples=0,
             dataset=self.dataset.name,
             f1=f1,
             true_pos=result["true_pos"],
             true_neg=result["true_neg"],
             false_pos=result["false_pos"],
             false_neg=result["false_neg"],
+            prompt=prompt_template,
         )
         self.logger.info(
             f"Finished zero shot in {time.strftime('%H:%M:%S', time.gmtime(runtime))}"
@@ -119,9 +122,10 @@ class ErrorDetection(SetupExperiment):
     def few_shot(
         self,
         data_indeces: List[int] | None = None,
-        promt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}?",
+        prompt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}?",
         n_samples: int = 100,
         example_count: int = 2,
+        id: Union[int, str] = "",
     ) -> Tuple[float, float]:
         self.logger.info(
             f"Started few shot for {n_samples} rows with {example_count} examples"
@@ -161,7 +165,7 @@ class ErrorDetection(SetupExperiment):
                 )
 
                 # create prompt
-                prompt = promt_template.format(
+                prompt = prompt_template.format(
                     attr=attribute, context=serialized_row, example=examples
                 )
                 correct_value: bool = (
@@ -170,13 +174,15 @@ class ErrorDetection(SetupExperiment):
                 y_true.append(int(correct_value))
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
-                    prompt, id=f"ed_fs-{timestamp}", logger=self.logger
+                    prompt, id=f"ed_fs{id}-{timestamp}", logger=self.logger
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     self.logger.log_prompting_result(
-                        id=f"ed_fs-{timestamp}", predicted=1, correct=int(correct_value)
+                        id=f"ed_fs{id}-{timestamp}",
+                        predicted=1,
+                        correct=int(correct_value),
                     )
                     y_pred.append(1)
                     if correct_value:
@@ -185,7 +191,9 @@ class ErrorDetection(SetupExperiment):
                         result["false_pos"] += 1
                 else:
                     self.logger.log_prompting_result(
-                        id=f"ed_fs-{timestamp}", predicted=0, correct=int(correct_value)
+                        id=f"ed_fs{id}-{timestamp}",
+                        predicted=0,
+                        correct=int(correct_value),
                     )
                     y_pred.append(0)
                     if correct_value:
@@ -201,12 +209,14 @@ class ErrorDetection(SetupExperiment):
             name="Error Detection few shot",
             runtime=runtimeString,
             n_rows=n_samples,
+            n_examples=example_count,
             dataset=self.dataset.name,
             f1=f1,
             true_pos=result["true_pos"],
             true_neg=result["true_neg"],
             false_pos=result["false_pos"],
             false_neg=result["false_neg"],
+            prompt=prompt_template,
         )
         self.logger.info(
             f"Finished few shot in {time.strftime('%H:%M:%S', time.gmtime(runtime))}"
