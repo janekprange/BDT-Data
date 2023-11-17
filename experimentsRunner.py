@@ -12,7 +12,7 @@ from experiment.setupExperiment import ground_truth_as_int
 
 MAXIMUM_ROW_COUNT = 100
 DEBUG_MESSAGES = True
-ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights(), n_rows=MAXIMUM_ROW_COUNT)
+ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights())
 # ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food(), n_rows=MAXIMUM_ROW_COUNT)
 # ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital(), n_rows=MAXIMUM_ROW_COUNT)
 
@@ -20,39 +20,24 @@ ITERATION_AMOUNT = 2
 
 
 def flight_test_p1(data) -> pd.DataFrame:
-    shuffled_flights_dirty, shuffled_flights_clean = Flights().random_sample(
-        MAXIMUM_ROW_COUNT
-    )
-    comp = compare_dataframes_by_row(shuffled_flights_dirty, shuffled_flights_clean)
-    intsFlight = ground_truth_as_int(comp)
-
     for i in range(ITERATION_AMOUNT):
-        start_time = time.time()
-        classified_zero_shot = ERROR_DETECTION_FLIGHTS.zero_shot(
-            shuffled_flights_dirty,
+        runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_FLIGHTS.zero_shot(
             prompt_template="Is there an error in {attr}?\n\n{context}?\n\nRestrict your answer to a single word that is either yes or no.",
+            n_samples=MAXIMUM_ROW_COUNT,
+            id=f"_p1_{i}",
         )
-        end_time = time.time()
 
-        time_spent_zero_shot = end_time - start_time
-        flights_zero_shot_score = f1(intsFlight, classified_zero_shot)
-
-        start_time = time.time()
-        classified_few_shot = ERROR_DETECTION_FLIGHTS.few_shot(
-            shuffled_flights_dirty,
-            promt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?\n\nRestrict your answer to a single word that is either yes or no.",
+        runtime_fewshot, f1_fewshot = ERROR_DETECTION_FLIGHTS.few_shot(
+            prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?\n\nRestrict your answer to a single word that is either yes or no.",
+            id=f"_p1_{i}",
         )
-        end_time = time.time()
-
-        time_spent_few_shot = end_time - start_time
-        flights_few_shot_score = f1(intsFlight, classified_few_shot)
 
         zero_res = pd.DataFrame(
-            [["Flight", "ZS", time_spent_zero_shot, flights_zero_shot_score]],
+            [["Flight", "ZS", runtime_zeroshot, f1_zeroshot]],
             columns=["Dataset", "Type", "Time", "F1-Score"],
         )
         few_res = pd.DataFrame(
-            [["Flight", "FS", time_spent_few_shot, flights_few_shot_score]],
+            [["Flight", "FS", runtime_fewshot, f1_fewshot]],
             columns=["Dataset", "Type", "Time", "F1-Score"],
         )
         data = pd.concat([data, zero_res, few_res], ignore_index=True)
@@ -62,39 +47,23 @@ def flight_test_p1(data) -> pd.DataFrame:
 def flight_test_p2(
     data, promt: str = "Is there an error in {attr}?\n{context}?"
 ) -> pd.DataFrame:
-    shuffled_flights_dirty, shuffled_flights_clean = Flights().random_sample(
-        MAXIMUM_ROW_COUNT
-    )
-    comp = compare_dataframes_by_row(shuffled_flights_dirty, shuffled_flights_clean)
-    intsFlight = ground_truth_as_int(comp)
-
     for i in range(ITERATION_AMOUNT):
-        start_time = time.time()
-        classified_zero_shot = ERROR_DETECTION_FLIGHTS.zero_shot(
-            shuffled_flights_dirty,
+        runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_FLIGHTS.zero_shot(
             prompt_template="First take a deep breath!\n\nIs there an error in {attr}?\n\n{context}?",
+            id=f"_p2_{i}",
         )
-        end_time = time.time()
 
-        time_spent_zero_shot = end_time - start_time
-        flights_zero_shot_score = f1(intsFlight, classified_zero_shot)
-
-        start_time = time.time()
-        classified_few_shot = ERROR_DETECTION_FLIGHTS.few_shot(
-            shuffled_flights_dirty,
-            promt_template="First take a deep breath!\n\nIs there an error in {attr}?\n\n{example}\n\n{context}?",
+        runtime_fewshot, f1_fewshot = ERROR_DETECTION_FLIGHTS.few_shot(
+            prompt_template="First take a deep breath!\n\nIs there an error in {attr}?\n\n{example}\n\n{context}?",
+            id=f"_p2_{i}",
         )
-        end_time = time.time()
-
-        time_spent_few_shot = end_time - start_time
-        flights_few_shot_score = f1(intsFlight, classified_few_shot)
 
         zero_res = pd.DataFrame(
-            [["Flight", "ZS", time_spent_zero_shot, flights_zero_shot_score]],
+            [["Flight", "ZS", runtime_zeroshot, f1_zeroshot]],
             columns=["Dataset", "Type", "Time", "F1-Score"],
         )
         few_res = pd.DataFrame(
-            [["Flight", "FS", time_spent_few_shot, flights_few_shot_score]],
+            [["Flight", "FS", runtime_fewshot, f1_fewshot]],
             columns=["Dataset", "Type", "Time", "F1-Score"],
         )
         data = pd.concat([data, zero_res, few_res], ignore_index=True)
