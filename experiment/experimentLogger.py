@@ -74,6 +74,7 @@ class Logger:
         false_neg: int,
         prompt: str,
     ) -> None:
+        prompt = prompt.replace("\n", "\\n")
         with open(f"{self.path}/experiment-results.csv", "a") as file:
             file.write(
                 f"{name}, {dataset}, {n_rows}, {n_examples}, {runtime}, {f1}, {true_pos}, {true_neg}, {false_pos}, {false_neg}, {prompt} \n"

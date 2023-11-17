@@ -1,4 +1,4 @@
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Literal
 import pandas as pd
 from ipywidgets import IntProgress
 from IPython.display import display
@@ -16,8 +16,9 @@ class ErrorDetection(SetupExperiment):
         dataset: DataSet,
         skip_prompting: bool = False,
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+        model_size: Literal["small", "medium", "large"] = "large",
     ) -> None:
-        super().__init__(skip_prompting)
+        super().__init__(skip_prompting, model_size=model_size)
         self.dataset = dataset
         self.logger = Logger(name="ErrorDetection", path=logging_path)
 
@@ -28,7 +29,7 @@ class ErrorDetection(SetupExperiment):
         n_samples: int = 100,
         id: Union[int, str] = "",
     ) -> Tuple[float, float]:
-        self.logger.info("Started zero shot for {n_samples} rows")
+        self.logger.info(f"Started zero shot for {n_samples} rows")
         dirty_data: pd.DataFrame
         clean_data: pd.DataFrame
         if data_indeces is None:
