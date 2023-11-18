@@ -166,17 +166,6 @@ class ErrorDetection(SetupExperiment):
             clean_data = self.dataset.get(dirty=False).iloc(data_indices)
 
         return self._execute(dirty_data, clean_data, prompt_template, "Error Detection Few Shot", self.dataset.name, example_count)
-    
-class CustomErrorDetection(ErrorDetection):
-    def __init__(
-        self,
-        skip_prompting: bool = False,
-        logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-        model_size: Literal["small", "medium", "large"] = "large",
-    ) -> None:
-        super().__init__(None, skip_prompting=skip_prompting, logging_path=logging_path, model_size=model_size)
-        
-        # todo use given dataframes for zero_shot and few_shot
         
     
 
