@@ -54,7 +54,7 @@ class Logger:
 
     def log_response(self, id: str, response) -> None:
         with open(f"{self.path}/{self.name}/responses/{id}.json", "w") as file:
-            json.dump(response, file)
+            json.dump(response, file, indent=2)
 
     def log_prompting_result(self, id: str, predicted: int, correct: int) -> None:
         with open(f"{self.path}/{self.name}/prompt-results.csv", "a") as file:

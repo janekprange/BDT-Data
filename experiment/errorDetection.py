@@ -11,6 +11,8 @@ import time
 
 
 class ErrorDetection(SetupExperiment):
+    """A class that wraps the error detection experiments."""
+
     def __init__(
         self,
         dataset: DataSet,
@@ -18,22 +20,30 @@ class ErrorDetection(SetupExperiment):
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
         model_size: Literal["small", "medium", "large"] = "large",
     ) -> None:
+        """
+        A class that wraps the error detection experiments.
+
+        Args:
+            dataset (DataSet): The dataset that is used for the experiments,
+            skip_prompting (bool, optional): If True, Llama is neither initialized nor prompted. Defaults to False.
+            logging_path (str, optional): The path the logging files are written to. Defaults to f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}".
+            model_size (Literal[&quot;small&quot;, &quot;medium&quot;, &quot;large&quot;], optional): The model is available in different sizes/complexities. With a larger model comes a better quality and a worse runtime. Defaults to "large".
+        """
         super().__init__(skip_prompting, model_size=model_size)
         self.dataset = dataset
         self.logger = Logger(name="ErrorDetection", path=logging_path)
 
-    def _execute(self, 
-                 dirty_data: pd.DataFrame, 
-                 clean_data: pd.DataFrame, 
-                 prompt_template: str, 
-                 experiment_name: str, 
-                 dataset_name: str, 
-                 example_count:int = 0,
-                 id: Union[int, str] = "",
-        ) -> Tuple[float, float]:
-        
+    def _execute(
+        self,
+        dirty_data: pd.DataFrame,
+        clean_data: pd.DataFrame,
+        prompt_template: str,
+        experiment_name: str,
+        dataset_name: str,
+        example_count: int = 0,
+        id: Union[int, str] = "",
+    ) -> Tuple[float, float]:
         n_samples = len(dirty_data)
-        
         progressBar = IntProgress(
             min=0,
             max=min(dirty_data.shape[0], n_samples) * dirty_data.shape[1],
@@ -54,9 +64,8 @@ class ErrorDetection(SetupExperiment):
         for row_index, row in dirty_data.iterrows():
             serialized_row = serialize_row(row)
             for column, (attribute, value) in enumerate(row.items()):
-                
                 # create promt with examples if needed
-                if(example_count > 0):
+                if example_count > 0:
                     examples = self.dataset.generate_examples(
                         column_id=column, amount=example_count
                     )
@@ -68,8 +77,7 @@ class ErrorDetection(SetupExperiment):
                     prompt = prompt_template.format(
                         attr=attribute, val=value, context=serialized_row
                     )
-                    
-                    
+
                 correct_value: bool = (
                     clean_data.loc[[row_index]][attribute].values[0] != value
                 )
@@ -124,7 +132,6 @@ class ErrorDetection(SetupExperiment):
             f"Finished {experiment_name} in {time.strftime('%H:%M:%S', time.gmtime(runtime))}"
         )
         return runtime, f1
-        
 
     def zero_shot(
         self,
@@ -133,6 +140,17 @@ class ErrorDetection(SetupExperiment):
         n_samples: int = 100,
         id: Union[int, str] = "",
     ) -> Tuple[float, float]:
+        """Execute a zero shot experiment on the dataset the class was initialized with.
+
+        Args:
+            data_indices (List[int] | None, optional): A list of indeces of rows in the dataset that will be used for the experiment. Defaults to None.
+            prompt_template (str, optional): This template will be used to prompt the model. It will be formatted with `attr` (the name of the column that is checked for an error) and `context` (the row that is currently evaluated). Defaults to "Is there an error in {attr}?\\n{context}?".
+            n_samples (int, optional): The number of rows to use for the experiment. Defaults to 100.
+            id (Union[int, str], optional): An id that is used to identify the logging files belonging to this experiment. Defaults to "".
+
+        Returns:
+            Tuple[float, float]: runtime and f1 of the experiment
+        """
         self.logger.info(f"Started zero shot for {n_samples} rows")
         dirty_data: pd.DataFrame
         clean_data: pd.DataFrame
@@ -143,7 +161,15 @@ class ErrorDetection(SetupExperiment):
             dirty_data = self.dataset.get(dirty=True).iloc(data_indices)
             clean_data = self.dataset.get(dirty=False).iloc(data_indices)
 
-        return self._execute(dirty_data, clean_data, prompt_template, "Error Detection Zero Shot", self.dataset.name)
+        return self._execute(
+            dirty_data=dirty_data,
+            clean_data=clean_data,
+            prompt_template=prompt_template,
+            experiment_name="Error Detection Zero Shot",
+            dataset_name=self.dataset.name,
+            example_count=0,
+            id=id,
+        )
 
     def few_shot(
         self,
@@ -153,6 +179,18 @@ class ErrorDetection(SetupExperiment):
         example_count: int = 2,
         id: Union[int, str] = "",
     ) -> Tuple[float, float]:
+        """Execute a few shot experiment on the dataset the class was initialized with.
+
+        Args:
+            data_indices (List[int] | None, optional): A list of indeces of rows in the dataset that will be used for the experiment. Defaults to None.
+            prompt_template (str, optional): This template will be used to prompt the model. It will be formatted with `attr` (the name of the column that is checked for an error), `example` (example rows with the expected answer) and `context` (the row that is currently evaluated). Defaults to "Is there an error in {attr}?\\n\\n{example}\\n\\n{context}?".
+            n_samples (int, optional): The number of rows to use for the experiment. Defaults to 100.
+            example_count (int, optional): The number of rows (with the expected answer) the model is given. Defaults to 2.
+            id (Union[int, str], optional): An id that is used to identify the logging files belonging to this experiment. Defaults to "".
+
+        Returns:
+            Tuple[float, float]: runtime and f1 of the experiment
+        """
         self.logger.info(
             f"Started few shot for {n_samples} rows with {example_count} examples"
         )
@@ -165,7 +203,12 @@ class ErrorDetection(SetupExperiment):
             dirty_data = self.dataset.get(dirty=True).iloc(data_indices)
             clean_data = self.dataset.get(dirty=False).iloc(data_indices)
 
-        return self._execute(dirty_data, clean_data, prompt_template, "Error Detection Few Shot", self.dataset.name, example_count)
-        
-    
-
+        return self._execute(
+            dirty_data=dirty_data,
+            clean_data=clean_data,
+            prompt_template=prompt_template,
+            experiment_name="Error Detection Few Shot",
+            dataset_name=self.dataset.name,
+            example_count=example_count,
+            id=id,
+        )
