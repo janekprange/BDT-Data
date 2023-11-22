@@ -50,12 +50,12 @@ class SetupExperiment:
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/#llama_cpp.Llama.create_completion
         response = self.llama(
             prompt=prompt,
-            max_tokens=10,
-            temperature=0.5,
-            top_p=0.95,
-            repeat_penalty=1.2,
-            top_k=50,
-            stop=["USER:"],  # Dynamic stopping when such token is detected.
+            max_tokens=128,
+            # temperature=0.5,
+            # top_p=0.95,
+            # repeat_penalty=1.1,
+            # top_k=50,
+            # stop=["USER:"],  # Dynamic stopping when such token is detected.
             echo=False,  # return the prompt
         )
         log_response = {**response, "prompt": prompt}  # type: ignore
