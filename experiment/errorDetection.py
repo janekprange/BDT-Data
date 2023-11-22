@@ -84,13 +84,13 @@ class ErrorDetection(SetupExperiment):
                 y_true.append(int(correct_value))
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
-                    prompt, id=f"ed_fs{id}-{timestamp}", logger=self.logger
+                    prompt, id=f"{id}-{timestamp}", logger=self.logger
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     self.logger.log_prompting_result(
-                        id=f"ed_fs{id}-{timestamp}",
+                        id=f"{id}-{timestamp}",
                         predicted=1,
                         correct=int(correct_value),
                     )
@@ -101,7 +101,7 @@ class ErrorDetection(SetupExperiment):
                         result["false_pos"] += 1
                 else:
                     self.logger.log_prompting_result(
-                        id=f"ed_fs{id}-{timestamp}",
+                        id=f"{id}-{timestamp}",
                         predicted=0,
                         correct=int(correct_value),
                     )
@@ -168,7 +168,7 @@ class ErrorDetection(SetupExperiment):
             experiment_name="Error Detection Zero Shot",
             dataset_name=self.dataset.name,
             example_count=0,
-            id=id,
+            id=f"ed_zs{id}",
         )
 
     def few_shot(
@@ -210,5 +210,5 @@ class ErrorDetection(SetupExperiment):
             experiment_name="Error Detection Few Shot",
             dataset_name=self.dataset.name,
             example_count=example_count,
-            id=id,
+            id=f"ed_fs{id}",
         )
