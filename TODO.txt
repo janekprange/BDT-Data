@@ -1,0 +1,5 @@
+- retrieve the errors from the answer in an automatic way
+- compute recall/f1 etc. from clean data
+- test different prompts
+- test different hyperparameters (?)
+- automate experiments for different parameters
