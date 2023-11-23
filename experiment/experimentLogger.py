@@ -10,8 +10,9 @@ class Logger:
     ) -> None:
         Path(f"{path}/{name}/responses/").mkdir(parents=True, exist_ok=True)
 
-        with open(f"{path}/logs.csv", "w") as file:
-            file.write("Name, Level, Time, Message\n")
+        if not os.path.isfile(f"{path}/logs.csv"):
+            with open(f"{path}/logs.csv", "w") as file:
+                file.write("Name, Level, Time, Message\n")
 
         with open(f"{path}/{name}/prompt-results.csv", "w") as file:
             file.write("ID, Predicted, Correct\n")

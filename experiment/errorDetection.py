@@ -84,7 +84,10 @@ class ErrorDetection(SetupExperiment):
                 y_true.append(int(correct_value))
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
-                    prompt, id=f"{id}-{timestamp}", logger=self.logger
+                    prompt,
+                    id=f"{id}-{timestamp}",
+                    logger=self.logger,
+                    has_error=correct_value,
                 )
 
                 # evaluate response
