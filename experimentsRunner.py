@@ -1,17 +1,9 @@
-from typing import Tuple
-import numpy as np
 import pandas as pd
-from ipywidgets import IntProgress
-from IPython.display import display
-import time
-from sklearn.metrics import f1_score as f1
-from DataSet import Flights, Food, Hospital
-from experiment.errorDetection import ErrorDetection
-from experiment.setupExperiment import compare_dataframes_by_row
-from experiment.setupExperiment import ground_truth_as_int
+from experiment import Flights, Food, Hospital
+from experiment import ErrorDetection
 
 MAXIMUM_ROW_COUNT = 10
-ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights())
+ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights(), skip_prompting=True)
 # ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food(), n_rows=MAXIMUM_ROW_COUNT)
 # ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital(), n_rows=MAXIMUM_ROW_COUNT)
 

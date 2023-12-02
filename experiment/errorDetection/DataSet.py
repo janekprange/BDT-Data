@@ -58,23 +58,30 @@ class DataSet:
 class Flights(DataSet):
     def __init__(self):
         super().__init__(
-            "./prepared/flights_dirty.csv", "./prepared/flights_clean.csv", "Flights"
+            "./data/error_detection/prepared/flights_dirty.csv",
+            "./data/error_detection/prepared/flights_clean.csv",
+            "Flights",
         )
 
 
 class Food(DataSet):
     def __init__(self):
         super().__init__(
-            "./prepared/food_dirty.csv", "./prepared/food_clean.csv", "Food"
+            "./data/error_detection/prepared/food_dirty.csv",
+            "./data/error_detection/prepared/food_clean.csv",
+            "Food",
         )
 
 
 class Hospital(DataSet):
     def __init__(self):
         super().__init__(
-            "./prepared/hospital_dirty.csv", "./prepared/hospital_clean.csv", "Hospital"
+            "./data/error_detection/prepared/hospital_dirty.csv",
+            "./data/error_detection/prepared/hospital_clean.csv",
+            "Hospital",
         )
-        
+
+
 class CustomDataSet(DataSet):
     def __init__(self, dirty_data: pd.DataFrame, clean_data: pd.DataFrame, name: str):
         self.dirty_set: pd.DataFrame = dirty_data
