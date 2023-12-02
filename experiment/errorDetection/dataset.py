@@ -11,7 +11,7 @@ def serialize_row(row: pd.Series) -> str:
 
 
 class DataSet:
-    """This class encasulates all the functionality related to the datasets."""
+    """This class encasulates all the functionality related to the error detection datasets."""
 
     def __init__(self, path_dirty: str, path_clean: str, name: str):
         self.dirty_set: pd.DataFrame = pd.read_csv(path_dirty)
@@ -19,13 +19,13 @@ class DataSet:
         self.name = name
 
     def get(self, dirty: bool) -> pd.DataFrame:
-        """Returns a dataset as an Dataframes based on the calling object.
+        """Returns a dataset as a Dataframe based on the calling object.
         The "dirty" argument decides whether the dirty dataset or the clean dataset will be returned.
         """
         return self.dirty_set if dirty else self.clean_set
 
     def random_sample(self, amount: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Returns two DataFrames with "amount" random sample rows. There are no duplicate rows."""
+        """Returns two DataFrames with `amount` random sample rows. There are no duplicate rows."""
         # Generate a random permutation of row indices
         rng = np.random.default_rng()  # Create a random number generator
         permutation = rng.permutation(len(self.dirty_set))

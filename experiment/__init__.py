@@ -1,4 +1,7 @@
-from .errorDetection.errorDetection import ErrorDetection
 from .experimentLogger import Logger
-from .errorDetection.DataSet import Flights, Food, Hospital
-from .errorDetection.DataSet import CustomDataSet as CustomEDDataset
+
+from .errorDetection.errorDetection import ErrorDetection
+from .errorDetection.dataset import Flights, Food, Hospital
+from .errorDetection.dataset import CustomDataSet as CustomEDDataset
+
+from .duplicateDetection.dataset import Affiliation
