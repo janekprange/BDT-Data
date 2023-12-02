@@ -15,7 +15,10 @@ class DataSet:
         return id2 in self.mapping[self.mapping[0] == id1][1].values
 
     def random_sample(
-        self, amount: int, rows_with_duplicates: int, multiple_duplicate_change: float
+        self,
+        amount: int,
+        rows_with_duplicates: int,
+        multiple_duplicate_change: float = 0,
     ) -> pd.DataFrame:
         """Returns a DataFrame with `amount` random sample rows. There are no duplicate rows.
 
