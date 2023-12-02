@@ -3,11 +3,12 @@ from experiment import Flights, Food, Hospital
 from experiment import ErrorDetection
 
 MAXIMUM_ROW_COUNT = 10
-ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights(), skip_prompting=True)
-# ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food(), n_rows=MAXIMUM_ROW_COUNT)
-# ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital(), n_rows=MAXIMUM_ROW_COUNT)
+MAXIMUM_EXAMPLE_COUNT = round(MAXIMUM_ROW_COUNT / 2)
+ITERATION_AMOUNT = 5
 
-ITERATION_AMOUNT = 1
+ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights())
+ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food())
+ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital())
 
 
 def flight_test(data) -> pd.DataFrame:
@@ -22,7 +23,7 @@ def flight_test(data) -> pd.DataFrame:
             prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
             n_samples=MAXIMUM_ROW_COUNT,
             id=f"_p1_{i}",
-            example_count=10,
+            example_count=MAXIMUM_EXAMPLE_COUNT,
         )
 
         zero_res = pd.DataFrame(
@@ -33,6 +34,7 @@ def flight_test(data) -> pd.DataFrame:
             [["Flight", "FS", runtime_fewshot, f1_fewshot]],
             columns=["Dataset", "Type", "Time", "F1-Score"],
         )
+
         data = pd.concat([data, zero_res, few_res], ignore_index=True)
     return data
 
@@ -63,79 +65,69 @@ def flight_test(data) -> pd.DataFrame:
 #     return data
 
 
-# def food_test(data) -> pd.DataFrame:
-#     shuffled_food_dirty, shuffled_food_clean = Food().random_sample(MAXIMUM_ROW_COUNT)
-#     comp = compare_dataframes_by_row(shuffled_food_dirty, shuffled_food_clean)
-#     intsFood = ground_truth_as_int(comp)
+def food_test(data) -> pd.DataFrame:
+    for i in range(ITERATION_AMOUNT):
+        runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_FOOD.zero_shot(
+            prompt_template="Is there an error in {attr}?\n\n{context}?",
+            n_samples=MAXIMUM_ROW_COUNT,
+            id=f"_p2_{i}",
+        )
 
-#     for i in range(ITERATION_AMOUNT):
-#         start_time = time.time()
-#         classified_zero_shot = ERROR_DETECTION_FOOD.zero_shot(shuffled_food_dirty)
-#         end_time = time.time()
+        runtime_fewshot, f1_fewshot = ERROR_DETECTION_FOOD.few_shot(
+            prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
+            n_samples=MAXIMUM_ROW_COUNT,
+            id=f"_p2_{i}",
+            example_count=MAXIMUM_EXAMPLE_COUNT,
+        )
 
-#         time_spent_zero_shot = end_time - start_time
-#         food_zero_shot_score = f1(intsFood, classified_zero_shot)
-
-#         start_time = time.time()
-#         classified_few_shot = ERROR_DETECTION_FOOD.few_shot(shuffled_food_dirty)
-#         end_time = time.time()
-
-#         time_spent_few_shot = end_time - start_time
-#         food_few_shot_score = f1(intsFood, classified_few_shot)
-
-#         zero_res = pd.DataFrame(
-#             [["Food", "ZS", time_spent_zero_shot, food_zero_shot_score]],
-#             columns=["Dataset", "Type", "Time", "F1-Score"],
-#         )
-#         few_res = pd.DataFrame(
-#             [["Food", "FS", time_spent_few_shot, food_few_shot_score]],
-#             columns=["Dataset", "Type", "Time", "F1-Score"],
-#         )
-#         data = pd.concat([data, zero_res, few_res], ignore_index=True)
-#     return data
+        zero_res = pd.DataFrame(
+            [["Food", "ZS", runtime_zeroshot, f1_zeroshot]],
+            columns=["Dataset", "Type", "Time", "F1-Score"],
+        )
+        few_res = pd.DataFrame(
+            [["Food", "FS", runtime_fewshot, f1_fewshot]],
+            columns=["Dataset", "Type", "Time", "F1-Score"],
+        )
+        data = pd.concat([data, zero_res, few_res], ignore_index=True)
+    return data
 
 
-# def hospital_test(data) -> pd.DataFrame:
-#     shuffled_hospital_dirty, shuffled_hospital_clean = Hospital().random_sample(
-#         MAXIMUM_ROW_COUNT
-#     )
-#     comp = compare_dataframes_by_row(shuffled_hospital_dirty, shuffled_hospital_clean)
-#     ints_hospital = ground_truth_as_int(comp)
+def hospital_test(data) -> pd.DataFrame:
+    for i in range(ITERATION_AMOUNT):
+        runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_HOSPITAL.zero_shot(
+            prompt_template="Is there an error in {attr}?\n\n{context}?",
+            n_samples=MAXIMUM_ROW_COUNT,
+            id=f"_p3_{i}",
+        )
 
-#     for i in range(ITERATION_AMOUNT):
-#         start_time = time.time()
-#         classified_zero_shot = ERROR_DETECTION_HOSPITAL.zero_shot(
-#             shuffled_hospital_dirty
-#         )
-#         end_time = time.time()
+        runtime_fewshot, f1_fewshot = ERROR_DETECTION_HOSPITAL.few_shot(
+            prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
+            n_samples=MAXIMUM_ROW_COUNT,
+            id=f"_p3_{i}",
+            example_count=MAXIMUM_EXAMPLE_COUNT,
+        )
 
-#         time_spent_zero_shot = end_time - start_time
-#         hospital_zero_shot_score = f1(ints_hospital, classified_zero_shot)
-
-#         start_time = time.time()
-#         classified_few_shot = ERROR_DETECTION_HOSPITAL.few_shot(shuffled_hospital_dirty)
-#         end_time = time.time()
-
-#         time_spent_few_shot = end_time - start_time
-#         hospital_few_shot_score = f1(ints_hospital, classified_few_shot)
-
-#         zero_res = pd.DataFrame(
-#             [["Hospital", "ZS", time_spent_zero_shot, hospital_zero_shot_score]],
-#             columns=["Dataset", "Type", "Time", "F1-Score"],
-#         )
-#         few_res = pd.DataFrame(
-#             [["Hospital", "FS", time_spent_few_shot, hospital_few_shot_score]],
-#             columns=["Dataset", "Type", "Time", "F1-Score"],
-#         )
-#         data = pd.concat([data, zero_res, few_res], ignore_index=True)
-#     return data
+        zero_res = pd.DataFrame(
+            [["Hospital", "ZS", runtime_zeroshot, f1_zeroshot]],
+            columns=["Dataset", "Type", "Time", "F1-Score"],
+        )
+        few_res = pd.DataFrame(
+            [["Hospital", "FS", runtime_fewshot, f1_fewshot]],
+            columns=["Dataset", "Type", "Time", "F1-Score"],
+        )
+        data = pd.concat([data, zero_res, few_res], ignore_index=True)
+    return data
 
 
 if __name__ == "__main__":
     df = pd.DataFrame([], columns=["Dataset", "Type", "Time", "F1-Score"])
-    result_name = "flight_restrict_answer_test_10_5_10exs2"
+    result_name = "general_10_5"
     print("START Flight")
     df = flight_test(df)
+    print("START Food")
+    df = food_test(df)
+    print("START Hospital")
+    df = hospital_test(df)
     df.to_csv(f"./analysis/data/{result_name}.csv")
 
     # df = pd.DataFrame([], columns=["Dataset", "Type", "Time", "F1-Score"])
