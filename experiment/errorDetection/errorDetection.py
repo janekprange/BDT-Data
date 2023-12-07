@@ -3,8 +3,8 @@ import pandas as pd
 from ipywidgets import IntProgress
 from IPython.display import display
 from datetime import datetime
-from ..setupExperiment import SetupExperiment
-from .dataset import DataSet, serialize_row
+from ..setupExperiment import SetupExperiment, serialize_row
+from .dataset import DataSet
 from ..experimentLogger import Logger
 from sklearn.metrics import f1_score
 import time

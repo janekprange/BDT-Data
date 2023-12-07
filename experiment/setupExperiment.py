@@ -88,6 +88,13 @@ class SetupExperiment:
         return response["choices"][0]["text"]  # type: ignore
 
 
+def serialize_row(row: pd.Series) -> str:
+    result = ""
+    for index, value in row.items():
+        result += f"{index}: {value}, "
+    return result[:-2]
+
+
 def compare_dataframes_by_row(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     # Check if the DataFrames have the same shape
     if not df1.shape == df2.shape:

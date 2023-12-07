@@ -6,7 +6,7 @@ from llama_cpp import LlamaGrammar
 from sklearn.metrics import f1_score
 
 from .dataset import DataSet
-from ..setupExperiment import SetupExperiment
+from ..setupExperiment import SetupExperiment, serialize_row
 from ..experimentLogger import Logger
 
 
@@ -57,7 +57,9 @@ class DuplicateDetection(SetupExperiment):
                 correct_value = self.dataset.isduplicate(index1, index2)
                 y_true.append(int(correct_value))
 
-                prompt = prompt_template.format(row1=row1, row2=row2)
+                prompt = prompt_template.format(
+                    row1=serialize_row(row1), row2=serialize_row(row2)
+                )
 
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
