@@ -1,6 +1,5 @@
 import pandas as pd
-from experiment import Flights, Food, Hospital
-from experiment import ErrorDetection
+from experiment.errorDetection import ErrorDetection, Flights, Food, Hospital
 from llama_cpp.llama_grammar import LlamaGrammar
 import csv
 from typing import Union
