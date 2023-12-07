@@ -29,7 +29,7 @@ class DuplicateDetection(SetupExperiment):
         multiple_duplicate_chance: float = 0,
         grammar: Union[LlamaGrammar, None] = None,
         prompt_template: str = "Are these two rows duplicates?\n{row1}\n{row2}",
-        id="",
+        log_id: Union[int, str] = "",
         experiment_name="Duplicate Detection",
     ) -> Tuple[float, float]:
         self.logger.info(f"Started duplicate detection for {n_samples} rows")
@@ -62,15 +62,15 @@ class DuplicateDetection(SetupExperiment):
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
                     prompt,
-                    id=f"dd{id}-{timestamp}",
+                    id=f"dd{log_id}-{timestamp}",
                     logger=self.logger,
-                    has_error=correct_value,  # TODO: rename?
+                    correct_answer=correct_value,
                     grammar=grammar,
                 )
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     self.logger.log_prompting_result(
-                        id=f"dd{id}-{timestamp}",
+                        id=f"dd{log_id}-{timestamp}",
                         predicted=1,
                         correct=int(correct_value),
                     )
@@ -81,7 +81,7 @@ class DuplicateDetection(SetupExperiment):
                         result["false_pos"] += 1
                 else:
                     self.logger.log_prompting_result(
-                        id=f"dd{id}-{timestamp}",
+                        id=f"dd{log_id}-{timestamp}",
                         predicted=0,
                         correct=int(correct_value),
                     )
