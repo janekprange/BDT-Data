@@ -8,10 +8,13 @@ from .dataset import DataSet, serialize_row
 from ..experimentLogger import Logger
 from sklearn.metrics import f1_score
 import time
+from llama_cpp.llama_grammar import LlamaGrammar
 
 
 class ErrorDetection(SetupExperiment):
     """A class that wraps the error detection experiments."""
+
+    GRAMMAR_YES_OR_NO = SetupExperiment.GRAMMAR_YES_OR_NO
 
     def __init__(
         self,
@@ -40,8 +43,10 @@ class ErrorDetection(SetupExperiment):
         prompt_template: str,
         experiment_name: str,
         dataset_name: str,
-        example_count: int = 0,
+        generated_example_count: int = 0,
+        custom_examples: str = "",
         id: Union[int, str] = "",
+        grammar: Union[LlamaGrammar, None] = None,
     ) -> Tuple[float, float]:
         n_samples = len(dirty_data)
         progressBar = IntProgress(
@@ -65,14 +70,18 @@ class ErrorDetection(SetupExperiment):
             serialized_row = serialize_row(row)
             for column, (attribute, value) in enumerate(row.items()):
                 # create promt with examples if needed
-                if example_count > 0:
+                if generated_example_count > 0:
                     examples = self.dataset.generate_examples(
-                        column_id=column, amount=example_count
+                        column_id=column, amount=generated_example_count
                     )
                     prompt = prompt_template.format(
                         attr=attribute, context=serialized_row, example=examples
                     )
-                # otherwise create the promt without the examples
+                # otherwise create the promt with custom examples
+                elif custom_examples != "":
+                    prompt = prompt_template.format(
+                        attr=attribute, context=serialized_row, example=custom_examples
+                    )
                 else:
                     prompt = prompt_template.format(
                         attr=attribute, val=value, context=serialized_row
@@ -88,6 +97,7 @@ class ErrorDetection(SetupExperiment):
                     id=f"{id}-{timestamp}",
                     logger=self.logger,
                     has_error=correct_value,
+                    grammar=grammar,
                 )
 
                 # evaluate response
@@ -122,7 +132,7 @@ class ErrorDetection(SetupExperiment):
             name=experiment_name,
             runtime=runtimeString,
             n_rows=n_samples,
-            n_examples=example_count,
+            n_examples=generated_example_count,
             dataset=dataset_name,
             f1=f1,
             true_pos=result["true_pos"],
@@ -142,6 +152,7 @@ class ErrorDetection(SetupExperiment):
         prompt_template: str = "Is there an error in {attr}?\n{context}?",
         n_samples: int = 100,
         id: Union[int, str] = "",
+        grammar: Union[LlamaGrammar, None] = None,
     ) -> Tuple[float, float]:
         """Execute a zero shot experiment on the dataset the class was initialized with.
 
@@ -154,6 +165,7 @@ class ErrorDetection(SetupExperiment):
         Returns:
             Tuple[float, float]: runtime and f1 of the experiment
         """
+
         self.logger.info(f"Started zero shot for {n_samples} rows")
         dirty_data: pd.DataFrame
         clean_data: pd.DataFrame
@@ -170,8 +182,9 @@ class ErrorDetection(SetupExperiment):
             prompt_template=prompt_template,
             experiment_name="Error Detection Zero Shot",
             dataset_name=self.dataset.name,
-            example_count=0,
+            generated_example_count=0,
             id=f"ed_zs{id}",
+            grammar=grammar,
         )
 
     def few_shot(
@@ -181,6 +194,8 @@ class ErrorDetection(SetupExperiment):
         n_samples: int = 100,
         example_count: int = 2,
         id: Union[int, str] = "",
+        grammar: Union[LlamaGrammar, None] = None,
+        custom_examples: str = ""
     ) -> Tuple[float, float]:
         """Execute a few shot experiment on the dataset the class was initialized with.
 
@@ -212,6 +227,8 @@ class ErrorDetection(SetupExperiment):
             prompt_template=prompt_template,
             experiment_name="Error Detection Few Shot",
             dataset_name=self.dataset.name,
-            example_count=example_count,
+            generated_example_count=example_count,
             id=f"ed_fs{id}",
+            grammar=grammar,
+            custom_examples=custom_examples
         )

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import random
 from typing import Tuple
 
 
@@ -35,6 +36,36 @@ class DataSet:
         clean_shuffled = self.clean_set.iloc[permutation[:amount]]
 
         return (dirty_shuffled, clean_shuffled)
+    
+    def random_sample_with_quota(self, amount, dirty_amount) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        '''Returns two DataFrames with `amount` randomly sampled rows, of which `dirty_amount` contain errors while the rest are clean.'''
+        equal_indices = []
+        different_indices = []
+        for i, (index, row) in enumerate(self.dirty_set.iterrows()):
+            if (self.clean_set.iloc[i] == row).all():
+                equal_indices.append(i)
+            else:
+                different_indices.append(i)
+
+        if dirty_amount > len(different_indices):
+            print(f"Dataset does not contain enough errors! proceeding with maximum amount of {len(different_indices)} errors")
+            dirty_amount = len(different_indices)
+        equal_indices = np.random.choice(equal_indices, size=amount - dirty_amount, replace=False)
+        different_indices = np.random.choice(different_indices, size=dirty_amount, replace=False)
+
+        dirty_rows = self.dirty_set.iloc[different_indices]
+        clean_rows = self.dirty_set.iloc[equal_indices]
+
+        dirty_sample = pd.concat([dirty_rows, clean_rows])
+        ground_truth = self.clean_set.iloc[different_indices]
+        clean_sample = pd.concat([ground_truth, clean_rows])
+
+        rng = np.random.default_rng()  # Create a random number generator
+        permutation = rng.permutation(len(dirty_sample))
+
+        dirty_sample = dirty_sample.iloc[permutation]
+        clean_sample = clean_sample.iloc[permutation]
+        return (dirty_sample, clean_sample)
 
     def generate_examples(self, column_id: int, amount: int = 1) -> str:
         """Returns a string with `amount` corrected random sample rows. There are no duplicate rows."""

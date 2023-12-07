@@ -1,13 +1,18 @@
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama
 import pandas as pd
-from typing import List, Literal
+from typing import List, Literal, Union
 from .experimentLogger import Logger
+from llama_cpp.llama_grammar import LlamaGrammar
 
 import time
 
 
 class SetupExperiment:
+    MAX_TOKENS = 128
+
+    GRAMMAR_YES_OR_NO = LlamaGrammar.from_string('root ::= ("Yes" | "No")')
+
     def __init__(
         self,
         skip_prompting: bool,
@@ -36,7 +41,7 @@ class SetupExperiment:
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/
         self.llama = Llama(
             model_path=model_path,
-            n_ctx=1024,  # Context window (used to be 40960)
+            n_ctx=4096,  # Context window (used to be 40960)
             n_gpu_layers=-1,  # Number of layers to offload to GPU (-ngl). If -1, all layers are offloaded.
             # n_threads=64, # CPU cores
             # n_batch=5120, # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
@@ -45,24 +50,37 @@ class SetupExperiment:
             verbose=False,  # Print verbose output to stderr. -> Sadly this does not work due to an issue in the library https://github.com/abetlen/llama-cpp-python/issues/729
         )
 
-    def _prompt(self, prompt: str, id: str, logger: Logger, has_error: bool) -> str:
+    def _prompt(
+        self,
+        prompt: str,
+        id: str,
+        logger: Logger,
+        has_error: bool,
+        grammar: Union[LlamaGrammar, None] = None,
+    ) -> str:
         if self.skip_prompting:
             return f"skipped prompting for: {prompt}"
-
+        
         start_time = time.time()
+        
+        max_tokens = self.MAX_TOKENS
+
+        if grammar == self.GRAMMAR_YES_OR_NO:
+            max_tokens = 1
 
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/#llama_cpp.Llama.create_completion
-        response = self.llama(
+        response = self.llama.create_completion(
             prompt=prompt,
-            max_tokens=128,
+            max_tokens=max_tokens,
             # temperature=0.5,
             # top_p=0.95,
             # repeat_penalty=1.1,
             # top_k=50,
             # stop=["USER:"],  # Dynamic stopping when such token is detected.
             echo=False,  # return the prompt
+            grammar=grammar,  # restrict llamas responses to the given grammar
         )
-
+        
         end_time = time.time()
         log_response = {**response, "prompt": prompt, has_error: has_error, "runtime": end_time - start_time}  # type: ignore
         logger.log_response(id=id, response=log_response)
@@ -91,9 +109,17 @@ def f1_score(y_true: List[int], y_pred: List[int]) -> float:
     false_positives = sum(1 for a, b in zip(y_true, y_pred) if a == 0 and b == 1)
     false_negatives = sum(1 for a, b in zip(y_true, y_pred) if a == 1 and b == 0)
 
-    if true_positives == 0:
-        return 0.0  # Handle the case where true_positives is 0
+    # first the edgecases with zeros:
 
+    # no mistakes is always perfect
+    if false_positives == 0 and false_negatives == 0:
+        return 1.0
+
+    # nothing is done correctly
+    if true_positives == 0:
+        return 0.0
+
+    # the rest is just following the formular
     precision = (
         true_positives / (true_positives + false_positives)
         if (true_positives + false_positives) > 0
