@@ -4,6 +4,8 @@ import pandas as pd
 from typing import List, Literal
 from .experimentLogger import Logger
 
+import time
+
 
 class SetupExperiment:
     def __init__(
@@ -47,6 +49,8 @@ class SetupExperiment:
         if self.skip_prompting:
             return f"skipped prompting for: {prompt}"
 
+        start_time = time.time()
+
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/#llama_cpp.Llama.create_completion
         response = self.llama(
             prompt=prompt,
@@ -58,7 +62,9 @@ class SetupExperiment:
             # stop=["USER:"],  # Dynamic stopping when such token is detected.
             echo=False,  # return the prompt
         )
-        log_response = {**response, "prompt": prompt, has_error: has_error}  # type: ignore
+
+        end_time = time.time()
+        log_response = {**response, "prompt": prompt, has_error: has_error, "runtime": end_time - start_time}  # type: ignore
         logger.log_response(id=id, response=log_response)
 
         return response["choices"][0]["text"]  # type: ignore
