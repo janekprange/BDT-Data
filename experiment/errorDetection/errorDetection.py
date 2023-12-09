@@ -3,8 +3,8 @@ import pandas as pd
 from ipywidgets import IntProgress
 from IPython.display import display
 from datetime import datetime
-from ..setupExperiment import SetupExperiment
-from .dataset import DataSet, serialize_row
+from ..setupExperiment import SetupExperiment, serialize_row
+from .dataset import DataSet
 from ..experimentLogger import Logger
 from sklearn.metrics import f1_score
 import time
@@ -45,7 +45,7 @@ class ErrorDetection(SetupExperiment):
         dataset_name: str,
         generated_example_count: int = 0,
         custom_examples: str = "",
-        id: Union[int, str] = "",
+        log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
     ) -> Tuple[float, float]:
         n_samples = len(dirty_data)
@@ -94,16 +94,16 @@ class ErrorDetection(SetupExperiment):
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
                     prompt,
-                    id=f"{id}-{timestamp}",
+                    id=f"{log_id}-{timestamp}",
                     logger=self.logger,
-                    has_error=correct_value,
+                    correct_answer=correct_value,
                     grammar=grammar,
                 )
 
                 # evaluate response
                 if "Yes" in response or "yes" in response:
                     self.logger.log_prompting_result(
-                        id=f"{id}-{timestamp}",
+                        id=f"{log_id}-{timestamp}",
                         predicted=1,
                         correct=int(correct_value),
                     )
@@ -114,7 +114,7 @@ class ErrorDetection(SetupExperiment):
                         result["false_pos"] += 1
                 else:
                     self.logger.log_prompting_result(
-                        id=f"{id}-{timestamp}",
+                        id=f"{log_id}-{timestamp}",
                         predicted=0,
                         correct=int(correct_value),
                     )
@@ -151,7 +151,7 @@ class ErrorDetection(SetupExperiment):
         data_indices: List[int] | None = None,
         prompt_template: str = "Is there an error in {attr}?\n{context}?",
         n_samples: int = 100,
-        id: Union[int, str] = "",
+        log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
     ) -> Tuple[float, float]:
         """Execute a zero shot experiment on the dataset the class was initialized with.
@@ -183,7 +183,7 @@ class ErrorDetection(SetupExperiment):
             experiment_name="Error Detection Zero Shot",
             dataset_name=self.dataset.name,
             generated_example_count=0,
-            id=f"ed_zs{id}",
+            log_id=f"ed_zs{log_id}",
             grammar=grammar,
         )
 
@@ -193,9 +193,9 @@ class ErrorDetection(SetupExperiment):
         prompt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}?",
         n_samples: int = 100,
         example_count: int = 2,
-        id: Union[int, str] = "",
+        log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
-        custom_examples: str = ""
+        custom_examples: str = "",
     ) -> Tuple[float, float]:
         """Execute a few shot experiment on the dataset the class was initialized with.
 
@@ -228,7 +228,7 @@ class ErrorDetection(SetupExperiment):
             experiment_name="Error Detection Few Shot",
             dataset_name=self.dataset.name,
             generated_example_count=example_count,
-            id=f"ed_fs{id}",
+            log_id=f"ed_fs{log_id}",
             grammar=grammar,
-            custom_examples=custom_examples
+            custom_examples=custom_examples,
         )

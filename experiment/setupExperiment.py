@@ -55,14 +55,14 @@ class SetupExperiment:
         prompt: str,
         id: str,
         logger: Logger,
-        has_error: bool,
+        correct_answer: bool,
         grammar: Union[LlamaGrammar, None] = None,
     ) -> str:
         if self.skip_prompting:
             return f"skipped prompting for: {prompt}"
-        
+
         start_time = time.time()
-        
+
         max_tokens = self.MAX_TOKENS
 
         if grammar == self.GRAMMAR_YES_OR_NO:
@@ -80,12 +80,19 @@ class SetupExperiment:
             echo=False,  # return the prompt
             grammar=grammar,  # restrict llamas responses to the given grammar
         )
-        
+
         end_time = time.time()
-        log_response = {**response, "prompt": prompt, has_error: has_error, "runtime": end_time - start_time}  # type: ignore
+        log_response = {**response, "prompt": prompt, "correct_answer": correct_answer, "runtime": end_time - start_time}  # type: ignore
         logger.log_response(id=id, response=log_response)
 
         return response["choices"][0]["text"]  # type: ignore
+
+
+def serialize_row(row: pd.Series) -> str:
+    result = ""
+    for index, value in row.items():
+        result += f"{index}: {value}, "
+    return result[:-2]
 
 
 def compare_dataframes_by_row(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:

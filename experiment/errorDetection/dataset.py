@@ -3,12 +3,7 @@ import numpy as np
 import random
 from typing import Tuple
 
-
-def serialize_row(row: pd.Series) -> str:
-    result = ""
-    for index, value in row.items():
-        result += f"{index}: {value}, "
-    return result[:-2] + "?"
+from ..setupExperiment import serialize_row
 
 
 class DataSet:
@@ -36,9 +31,11 @@ class DataSet:
         clean_shuffled = self.clean_set.iloc[permutation[:amount]]
 
         return (dirty_shuffled, clean_shuffled)
-    
-    def random_sample_with_quota(self, amount, dirty_amount) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        '''Returns two DataFrames with `amount` randomly sampled rows, of which `dirty_amount` contain errors while the rest are clean.'''
+
+    def random_sample_with_quota(
+        self, amount, dirty_amount
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Returns two DataFrames with `amount` randomly sampled rows, of which `dirty_amount` contain errors while the rest are clean."""
         equal_indices = []
         different_indices = []
         for i, (index, row) in enumerate(self.dirty_set.iterrows()):
@@ -48,10 +45,16 @@ class DataSet:
                 different_indices.append(i)
 
         if dirty_amount > len(different_indices):
-            print(f"Dataset does not contain enough errors! proceeding with maximum amount of {len(different_indices)} errors")
+            print(
+                f"Dataset does not contain enough errors! proceeding with maximum amount of {len(different_indices)} errors"
+            )
             dirty_amount = len(different_indices)
-        equal_indices = np.random.choice(equal_indices, size=amount - dirty_amount, replace=False)
-        different_indices = np.random.choice(different_indices, size=dirty_amount, replace=False)
+        equal_indices = np.random.choice(
+            equal_indices, size=amount - dirty_amount, replace=False
+        )
+        different_indices = np.random.choice(
+            different_indices, size=dirty_amount, replace=False
+        )
 
         dirty_rows = self.dirty_set.iloc[different_indices]
         clean_rows = self.dirty_set.iloc[equal_indices]

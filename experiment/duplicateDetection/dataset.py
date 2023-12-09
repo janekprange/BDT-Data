@@ -4,28 +4,28 @@ import pandas as pd
 
 
 class DataSet:
-    """This class encasulates all the functionality related to the duplicate detection datasets."""
+    """This class encapsulates all the functionality related to the duplicate detection datasets."""
 
     def __init__(self, path_data: str, path_mapping: str, name: str):
         self.data: pd.DataFrame = pd.read_csv(path_data, index_col=0)
         self.mapping: pd.DataFrame = pd.read_csv(path_mapping, header=None)
         self.name = name
 
-    def isduplicate(self, id1: int, id2: int) -> bool:
+    def isduplicate(self, id1, id2) -> bool:
         return id2 in self.mapping[self.mapping[0] == id1][1].values
 
     def random_sample(
         self,
         amount: int,
         rows_with_duplicates: int,
-        multiple_duplicate_change: float = 0,
+        multiple_duplicate_chance: float = 0,
     ) -> pd.DataFrame:
         """Returns a DataFrame with `amount` random sample rows. There are no duplicate rows.
 
         Args:
             amount (int): The number of rows the returned DataFrame has.
             rows_with_duplicates (int): The number of rows that have duplicates
-            multiple_duplicate_change (float): The probability that a row has an additional duplicate.
+            multiple_duplicate_chance (float): The probability that a row has an additional duplicate.
 
         Raises:
             ValueError: If any of the parameter are outside the allowed range
@@ -39,7 +39,7 @@ class DataSet:
             raise ValueError(
                 "Amount has to be as least twice as large as rows_with_duplicates"
             )
-        if multiple_duplicate_change < 0 or multiple_duplicate_change > 1:
+        if multiple_duplicate_chance < 0 or multiple_duplicate_chance > 1:
             raise ValueError(
                 "multiple_duplicate_change has to be a probability between 0 and 1"
             )
@@ -67,7 +67,7 @@ class DataSet:
                     n_duplicates += 1
                     if (
                         rows_with_duplicates <= 0
-                        or np.random.random() >= multiple_duplicate_change
+                        or np.random.random() >= multiple_duplicate_chance
                     ):
                         break
                 result_indeces += list(
