@@ -1,8 +1,10 @@
+import os
 import pandas as pd
-from experiment.errorDetection import ErrorDetection, Flights, Food, Hospital
 from llama_cpp.llama_grammar import LlamaGrammar
 import csv
 from typing import Union
+from experiment.errorDetection import ErrorDetection, Flights, Food, Hospital
+from experiment.duplicateDetection import DuplicateDetection, Affiliation
 
 MAXIMUM_ROW_COUNT = 20
 MAXIMUM_EXAMPLE_COUNT = round(MAXIMUM_ROW_COUNT / 2)
@@ -10,12 +12,12 @@ ITERATION_AMOUNT = 5
 GRAMMAR = ErrorDetection.GRAMMAR_YES_OR_NO
 # GRAMMAR = None
 
-ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights())
-ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food())
-ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital())
+# ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights())
+# ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food())
+# ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital())
 
 
-def test(
+def test_errorDetection(
     ed: ErrorDetection, result_path: str, grammar: Union[LlamaGrammar, None] = None
 ) -> None:
     with open(result_path, "a") as csv_file:
@@ -42,7 +44,34 @@ def test(
             csv_file.flush()
 
 
+def test_duplicateDetection_different_grammar(logging_path: str, n_iterations=3):
+    N_ROWS = 50
+    N_DUPLICATES = 20
+    CHANCE_MULTIPLE_DUPLICATES = 0.3
+    if os.path.exists(logging_path):
+        raise FileExistsError(f"The directory '{logging_path}' already exists.")
+    dd = DuplicateDetection(Affiliation(), logging_path=logging_path)
+    for iteration in range(n_iterations):
+        dd.compare_rows(
+            n_samples=N_ROWS,
+            rows_with_duplicates=N_DUPLICATES,
+            multiple_duplicate_chance=CHANCE_MULTIPLE_DUPLICATES,
+            grammar=dd.GRAMMAR_YES_OR_NO,
+            experiment_name=f"WithGrammar-{iteration}",
+        )
+        dd.compare_rows(
+            n_samples=N_ROWS,
+            rows_with_duplicates=N_DUPLICATES,
+            multiple_duplicate_chance=CHANCE_MULTIPLE_DUPLICATES,
+            experiment_name=f"NoGrammar-{iteration}",
+        )
+
+
 if __name__ == "__main__":
+    test_duplicateDetection_different_grammar(
+        logging_path="keep_logs/duplicateDetection_grammar"
+    )
+    exit()
     result_name = "grammar_yes_or_no_5x20"
     result_path = f"./analysis/data/{result_name}.csv"
 
@@ -51,9 +80,9 @@ if __name__ == "__main__":
         writer.writerow(["Dataset", "Type", "Time", "F1-Score"])
 
     print("START Flight")
-    test(ERROR_DETECTION_FLIGHTS, result_path, GRAMMAR)
+    test_errorDetection(ERROR_DETECTION_FLIGHTS, result_path, GRAMMAR)
     print("START Food")
-    test(ERROR_DETECTION_FOOD, result_path, GRAMMAR)
+    test_errorDetection(ERROR_DETECTION_FOOD, result_path, GRAMMAR)
     # print("START Hospital")
     # test(ERROR_DETECTION_HOSPITAL, result_path, GRAMMAR)
 

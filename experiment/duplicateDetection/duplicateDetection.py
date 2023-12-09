@@ -14,7 +14,7 @@ class DuplicateDetection(SetupExperiment):
     def __init__(
         self,
         dataset: DataSet,
-        skip_prompting: bool,
+        skip_prompting: bool = False,
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
         model_size: Literal["small", "medium", "large"] = "large",
     ) -> None:
