@@ -120,4 +120,4 @@ class CustomDataSet(DataSet):
     def __init__(self, dirty_data: pd.DataFrame, clean_data: pd.DataFrame, name: str):
         self.dirty_set: pd.DataFrame = dirty_data
         self.clean_set: pd.DataFrame = clean_data
-        self.name = f'Custom Dataset "{name}"'
+        self.name = f'{name}'

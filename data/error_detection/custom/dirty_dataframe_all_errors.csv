@@ -1,21 +1,21 @@
-Country,City,Population
-England,Greenwich,63500
-USA,Miamia,436000
-France,Barcelona,5850000
-Japan,Kyoto,146000
-Autralia,Manila,13500000
-Germany,Hannover,538000
-Netherlands,Groningen,235000
-Turkey,Istanbul,15800000
-South Africa,Queenstown,68900
-USA,Phoenix,1650000
-Japan,Shanghai,29200000
-Hungary,Budapest,1760000
-Egypt,New Kairo,297000
-Mali,Bamako,2930000
-Nigeria,La gos,13500000
-Mexico,Guadalajara,5040000
-Thailand,Hat Yai,149000
-United Arab Emirates,Dubai,31400
-Wales,Cardiff,362800
-Greece,Athens,315000000
+Country,City,Population,Country Codes
+England,Greenwich,63500,GBR
+United States of America,Miamia,436000,USA
+Spain,Barcelona,5850000,ESP
+Japan,Kyoto,146000,JPN
+Philippines,Manila,13500000,PHL
+Germany,Hannover,538000,DEU
+Netherlands,Groningen,235000,NLD
+Türkiye,Istanbul,15800000,TUR
+South Africa,Queenstown,68900,ZAF
+United States of America,Phoenix,1650000,USA
+China,Shanghai,29200000,CHN
+Hungary,Budapest,1760000,HUN
+Egypt,New Kairo,297000,EGY
+Mali,Bamako,2930000,MLI
+Nigeria,La gos,13500000,NGA
+Mexico,Guadalajara,5040000,MEX
+Thailand,Hat Yai,149000,THA
+United Arab Emirates,Dubai,31400,ARE
+Ireland,Dublin,1345402,IRL
+Greece,Athens,315000000,GRC

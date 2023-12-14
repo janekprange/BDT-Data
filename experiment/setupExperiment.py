@@ -66,7 +66,7 @@ class SetupExperiment:
         max_tokens = self.MAX_TOKENS
 
         if grammar == self.GRAMMAR_YES_OR_NO:
-            max_tokens = 1
+            max_tokens = 3
 
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/#llama_cpp.Llama.create_completion
         response = self.llama.create_completion(
@@ -83,7 +83,7 @@ class SetupExperiment:
 
         end_time = time.time()
         log_response = {**response, "prompt": prompt, "correct_answer": correct_answer, "runtime": end_time - start_time}  # type: ignore
-        logger.log_response(id=id, response=log_response)
+        # logger.log_response(id=id, response=log_response)
 
         return response["choices"][0]["text"]  # type: ignore
 
