@@ -1,9 +1,13 @@
-from huggingface_hub import hf_hub_download
+from collections import defaultdict
 from llama_cpp import Llama
 import pandas as pd
 from typing import List, Literal, Union
 from .experimentLogger import Logger
 from llama_cpp.llama_grammar import LlamaGrammar
+
+from transformers import AutoTokenizer
+import transformers
+import torch
 
 import time
 
@@ -16,38 +20,29 @@ class SetupExperiment:
     def __init__(
         self,
         skip_prompting: bool,
-        model_size: Literal["small", "medium", "large"] = "large",
+        model_size: Literal["small", "medium", "large"] = "small",
     ) -> None:
         self.skip_prompting = skip_prompting
         if skip_prompting:
             return
         # select the model
-        model_name_or_path = "TheBloke/Llama-2-13B-chat-GGUF"
-        model_basename = ""
+        model_name = ""
         match model_size:
             case "small":
-                model_basename = "llama-2-13b-chat.Q3_K_S.gguf"
+                model_name = "meta-llama/Llama-2-7b-chat-hf"
             case "medium":
-                model_basename = "llama-2-13b-chat.Q4_K_M.gguf"
+                model_name = "meta-llama/Llama-2-13b-chat-hf"
             case "large":
-                model_basename = "llama-2-13b-chat.Q5_K_M.gguf"
+                model_name = "meta-llama/Llama-2-70b-chat-hf"
             case _:
                 raise ValueError("Unknown model size")
 
-        # download the model
-        model_path = hf_hub_download(
-            repo_id=model_name_or_path, filename=model_basename
-        )
-        # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/
-        self.llama = Llama(
-            model_path=model_path,
-            n_ctx=4096,  # Context window (used to be 40960)
-            n_gpu_layers=-1,  # Number of layers to offload to GPU (-ngl). If -1, all layers are offloaded.
-            # n_threads=64, # CPU cores
-            # n_batch=5120, # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
-            # n_gpu_layers=1, # Change this value based on your model and your GPU VRAM pool.
-            # tensor_split=8, #List of floats to split the model across multiple GPUs. If None, the model is not split
-            verbose=False,  # Print verbose output to stderr. -> Sadly this does not work due to an issue in the library https://github.com/abetlen/llama-cpp-python/issues/729
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.pipeline = transformers.pipeline(
+            "text-generation",
+            model=model_name,
+            torch_dtype=torch.float16,
+            device_map="auto",
         )
 
     def _prompt(
@@ -69,23 +64,69 @@ class SetupExperiment:
             max_tokens = 3
 
         # https://llama-cpp-python.readthedocs.io/en/stable/api-reference/#llama_cpp.Llama.create_completion
-        response = self.llama.create_completion(
-            prompt=prompt,
-            max_tokens=max_tokens,
-            # temperature=0.5,
-            # top_p=0.95,
-            # repeat_penalty=1.1,
-            # top_k=50,
-            # stop=["USER:"],  # Dynamic stopping when such token is detected.
-            echo=False,  # return the prompt
-            grammar=grammar,  # restrict llamas responses to the given grammar
+        # response = self.llama.create_completion(
+        #     prompt=prompt,
+        #     max_tokens=max_tokens,
+        #     # temperature=0.5,
+        #     # top_p=0.95,
+        #     # repeat_penalty=1.1,
+        #     # top_k=50,
+        #     # stop=["USER:"],  # Dynamic stopping when such token is detected.
+        #     echo=False,  # return the prompt
+        #     grammar=grammar,  # restrict llamas responses to the given grammar
+        # )
+        sequences = self.pipeline(
+            prompt,
+            do_sample=True,
+            top_k=10,
+            num_return_sequences=1,
+            eos_token_id=[
+                self.tokenizer.eos_token_id,
+                # self.tokenizer.encode("\n", add_special_tokens=False)[-1],
+            ],
+            max_length=250,
         )
 
         end_time = time.time()
-        log_response = {**response, "prompt": prompt, "correct_answer": correct_answer, "runtime": end_time - start_time}  # type: ignore
-        # logger.log_response(id=id, response=log_response)
+        if sequences[0]["generated_text"] is None:  # type: ignore
+            logger.error(f"Empty respone for id {id}")
+            return ""
+        response = sequences[0]["generated_text"].replace(prompt, "").strip()  # type: ignore
+        log_response = {
+            "response": response,
+            "prompt": prompt,
+            "correct_answer": correct_answer,
+            "runtime": end_time - start_time,
+        }
+        logger.log_response(id=id, response=log_response)
 
-        return response["choices"][0]["text"]  # type: ignore
+        return response
+
+    def _prompt_probabilities(
+        self,
+        prompt: str,
+        id: str,
+        logger: Logger,
+        correct_answer: bool,
+        grammar: Union[LlamaGrammar, None] = None,
+    ):
+        inputs = (
+            torch.tensor(self.tokenizer.encode(prompt))
+            .unsqueeze(0)
+            .to(self.pipeline.device)  # type: ignore
+        )  # type: ignore
+        outputs = self.pipeline.model(inputs)
+        probs = outputs[0][:, -1, :]
+        probs = torch.softmax(probs, dim=-1)
+        probs = probs.cpu().detach().numpy()[0]
+        token_probs = defaultdict(float)
+        for token, prob in enumerate(probs):
+            token_probs[self.tokenizer.decode(token)] += prob
+
+        for token, prob in sorted(
+            token_probs.items(), key=lambda x: x[1], reverse=True
+        )[:10]:
+            print(f"{token:<10}{prob:.2%}")
 
 
 def serialize_row(row: pd.Series) -> str:

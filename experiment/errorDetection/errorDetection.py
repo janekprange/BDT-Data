@@ -21,7 +21,7 @@ class ErrorDetection(SetupExperiment):
         dataset: DataSet,
         skip_prompting: bool = False,
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-        model_size: Literal["small", "medium", "large"] = "large",
+        model_size: Literal["small", "medium", "large"] = "small",
     ) -> None:
         """
         A class that wraps the error detection experiments.
@@ -153,6 +153,7 @@ class ErrorDetection(SetupExperiment):
         n_samples: int = 100,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
+        experiment_name="Error Detection Zero Shot",
     ) -> Tuple[float, float]:
         """Execute a zero shot experiment on the dataset the class was initialized with.
 
@@ -180,7 +181,7 @@ class ErrorDetection(SetupExperiment):
             dirty_data=dirty_data,
             clean_data=clean_data,
             prompt_template=prompt_template,
-            experiment_name="Error Detection Zero Shot",
+            experiment_name=experiment_name,
             dataset_name=self.dataset.name,
             generated_example_count=0,
             log_id=f"ed_zs{log_id}",
@@ -196,6 +197,7 @@ class ErrorDetection(SetupExperiment):
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
         custom_examples: str = "",
+        experiment_name="Error Detection Few Shot",
     ) -> Tuple[float, float]:
         """Execute a few shot experiment on the dataset the class was initialized with.
 
@@ -225,7 +227,7 @@ class ErrorDetection(SetupExperiment):
             dirty_data=dirty_data,
             clean_data=clean_data,
             prompt_template=prompt_template,
-            experiment_name="Error Detection Few Shot",
+            experiment_name=experiment_name,
             dataset_name=self.dataset.name,
             generated_example_count=example_count,
             log_id=f"ed_fs{log_id}",
