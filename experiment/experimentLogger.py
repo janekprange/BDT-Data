@@ -12,15 +12,15 @@ class Logger:
 
         if not os.path.isfile(f"{path}/logs.csv"):
             with open(f"{path}/logs.csv", "w") as file:
-                file.write("Name, Level, Time, Message\n")
+                file.write("Name,Level,Time,Message\n")
 
         with open(f"{path}/{name}/prompt-results.csv", "w") as file:
-            file.write("ID, Predicted, Correct\n")
+            file.write("ID,Predicted,Correct\n")
 
         if not os.path.isfile(f"{path}/experiment-results.csv"):
             with open(f"{path}/experiment-results.csv", "w") as file:
                 file.write(
-                    f"Namespace, Name, Dataset, Number of Rows, Number of Examples, Runtime, F1, Precision, Recall, Accuracy, True pos, True neg, False pos, False neg, Prompt \n"
+                    f"Namespace,Name,Dataset,Number of Rows,Number of Examples,Runtime,F1,Precision,Recall,Accuracy,True pos,True neg,False pos,False neg,Prompt \n"
                 )
 
         logging.basicConfig(
@@ -82,5 +82,5 @@ class Logger:
         recall = true_pos / (true_pos + false_neg)
         with open(f"{self.path}/experiment-results.csv", "a") as file:
             file.write(
-                f'"{namespace}", "{name}", {dataset}, {n_rows}, {n_examples}, {runtime}, {f1}, {precision}, {recall}, {accuracy}, {true_pos}, {true_neg}, {false_pos}, {false_neg}, "{prompt}"\n'
+                f'"{namespace}","{name}",{dataset},{n_rows},{n_examples},{runtime},{f1},{precision},{recall},{accuracy},{true_pos},{true_neg},{false_pos},{false_neg},"{prompt}"\n'
             )

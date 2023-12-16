@@ -184,10 +184,6 @@ def test_errorDetection_prompts(
 
 
 if __name__ == "__main__":
-    test_errorDetection_customDataset(
-        logging_path="logs/ed_customDataset", n_iterations=1, n_samples=5
-    )
+    test_errorDetection_customDataset(logging_path="keep_logs/ed_customDataset")
     # test_duplicateDetection_different_grammar(logging_path="keep_logs/dd_grammar")
-    test_errorDetection_prompts(
-        logging_path="logs/ed_prompts", n_iterations=1, n_samples=5
-    )
+    test_errorDetection_prompts(logging_path="keep_logs/ed_prompts")
