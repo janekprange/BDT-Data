@@ -95,7 +95,7 @@ class SetupExperiment:
         log_response = {
             "response": response,
             "prompt": prompt,
-            "correct_answer": correct_answer,
+            "correct_answer": str(correct_answer),
             "runtime": end_time - start_time,
         }
         logger.log_response(id=id, response=log_response)

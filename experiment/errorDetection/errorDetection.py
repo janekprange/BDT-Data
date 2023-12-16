@@ -42,6 +42,7 @@ class ErrorDetection(SetupExperiment):
         clean_data: pd.DataFrame,
         prompt_template: str,
         experiment_name: str,
+        experiment_namespace: str,
         dataset_name: str,
         generated_example_count: int = 0,
         custom_examples: str = "",
@@ -130,6 +131,7 @@ class ErrorDetection(SetupExperiment):
         f1 = float(f1_score(y_true, y_pred, average="binary", pos_label=1))
         self.logger.log_experiment_result(
             name=experiment_name,
+            namespace=experiment_namespace,
             runtime=runtimeString,
             n_rows=n_samples,
             n_examples=generated_example_count,
@@ -153,7 +155,8 @@ class ErrorDetection(SetupExperiment):
         n_samples: int = 100,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
-        experiment_name="Error Detection Zero Shot",
+        experiment_name="",
+        experiment_namespace="ErrorDetection.ZeroShot",
     ) -> Tuple[float, float]:
         """Execute a zero shot experiment on the dataset the class was initialized with.
 
@@ -182,6 +185,7 @@ class ErrorDetection(SetupExperiment):
             clean_data=clean_data,
             prompt_template=prompt_template,
             experiment_name=experiment_name,
+            experiment_namespace=experiment_namespace,
             dataset_name=self.dataset.name,
             generated_example_count=0,
             log_id=f"ed_zs{log_id}",
@@ -197,7 +201,8 @@ class ErrorDetection(SetupExperiment):
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
         custom_examples: str = "",
-        experiment_name="Error Detection Few Shot",
+        experiment_name="",
+        experiment_namespace="ErrorDetection.FewShot",
     ) -> Tuple[float, float]:
         """Execute a few shot experiment on the dataset the class was initialized with.
 
@@ -228,6 +233,7 @@ class ErrorDetection(SetupExperiment):
             clean_data=clean_data,
             prompt_template=prompt_template,
             experiment_name=experiment_name,
+            experiment_namespace=experiment_namespace,
             dataset_name=self.dataset.name,
             generated_example_count=example_count,
             log_id=f"ed_fs{log_id}",

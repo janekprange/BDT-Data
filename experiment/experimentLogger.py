@@ -20,7 +20,7 @@ class Logger:
         if not os.path.isfile(f"{path}/experiment-results.csv"):
             with open(f"{path}/experiment-results.csv", "w") as file:
                 file.write(
-                    f"Name, Dataset, Number of Rows, Number of Examples, Runtime, F1, Precision, Recall, Accuracy, True pos, True neg, False pos, False neg, Prompt \n"
+                    f"Namespace, Name, Dataset, Number of Rows, Number of Examples, Runtime, F1, Precision, Recall, Accuracy, True pos, True neg, False pos, False neg, Prompt \n"
                 )
 
         logging.basicConfig(
@@ -64,6 +64,7 @@ class Logger:
     def log_experiment_result(
         self,
         name: str,
+        namespace: str,
         runtime: str,
         n_rows: int,
         n_examples: int,
@@ -81,5 +82,5 @@ class Logger:
         recall = true_pos / (true_pos + false_neg)
         with open(f"{self.path}/experiment-results.csv", "a") as file:
             file.write(
-                f'"{name}", {dataset}, {n_rows}, {n_examples}, {runtime}, {f1}, {precision}, {recall}, {accuracy}, {true_pos}, {true_neg}, {false_pos}, {false_neg}, "{prompt}"\n'
+                f'"{namespace}", "{name}", {dataset}, {n_rows}, {n_examples}, {runtime}, {f1}, {precision}, {recall}, {accuracy}, {true_pos}, {true_neg}, {false_pos}, {false_neg}, "{prompt}"\n'
             )

@@ -24,6 +24,8 @@ class DuplicateDetection(SetupExperiment):
 
     def _execute(
         self,
+        experiment_name: str,
+        experiment_namespace: str,
         n_samples: int,
         rows_with_duplicates: int,
         multiple_duplicate_chance: float = 0,
@@ -32,7 +34,6 @@ class DuplicateDetection(SetupExperiment):
         example_count: int = 0,
         custom_examples: str = "",
         log_id: Union[int, str] = "",
-        experiment_name="Duplicate Detection",
     ):
         self.logger.info(f"Started duplicate detection for {n_samples} rows")
 
@@ -115,6 +116,7 @@ class DuplicateDetection(SetupExperiment):
 
         self.logger.log_experiment_result(
             name=experiment_name,
+            namespace=experiment_namespace,
             runtime=runtimeString,
             n_rows=n_samples,
             n_examples=0,
@@ -139,7 +141,8 @@ class DuplicateDetection(SetupExperiment):
         grammar: Union[LlamaGrammar, None] = None,
         prompt_template: str = "Are these two rows duplicates?\n{row1}\n{row2}",
         log_id: Union[int, str] = "",
-        experiment_name="Duplicate Detection",
+        experiment_name="",
+        experiment_namespace="DuplicateDetection.ZeroShot",
     ) -> Tuple[float, float]:
         return self._execute(
             n_samples=n_samples,
@@ -149,6 +152,7 @@ class DuplicateDetection(SetupExperiment):
             prompt_template=prompt_template,
             log_id=log_id,
             experiment_name=experiment_name,
+            experiment_namespace=experiment_namespace,
         )
 
     def few_shot(
@@ -159,7 +163,8 @@ class DuplicateDetection(SetupExperiment):
         grammar: Union[LlamaGrammar, None] = None,
         prompt_template: str = "Are these two rows duplicates?{examples}\n\n{row1}\n{row2}",
         log_id: Union[int, str] = "",
-        experiment_name="Duplicate Detection",
+        experiment_name="",
+        experiment_namespace="DuplicateDetection.FewShot",
         example_count: int = 2,
         custom_examples: str = "",
     ) -> Tuple[float, float]:
@@ -173,4 +178,5 @@ class DuplicateDetection(SetupExperiment):
             experiment_name=experiment_name,
             custom_examples=custom_examples,
             example_count=example_count,
+            experiment_namespace=experiment_namespace,
         )
