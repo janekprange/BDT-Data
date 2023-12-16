@@ -1,223 +1,193 @@
 import os
 import pandas as pd
-from llama_cpp.llama_grammar import LlamaGrammar
-import csv
-from typing import Union
-from experiment.errorDetection import ErrorDetection, Flights, Food, Hospital, CustomDataSet
-from experiment.duplicateDetection import DuplicateDetection, Affiliation
-
-MAXIMUM_ROW_COUNT = 20
-# MAXIMUM_EXAMPLE_COUNT = round(MAXIMUM_ROW_COUNT / 2)
-MAXIMUM_EXAMPLE_COUNT = 5
-ITERATION_AMOUNT = 10
-# GRAMMAR = ErrorDetection.GRAMMAR_YES_OR_NO
-GRAMMAR = None
-# ERROR_DETECTION_FLIGHTS = ErrorDetection(dataset=Flights())
-# ERROR_DETECTION_FOOD = ErrorDetection(dataset=Food())
-# ERROR_DETECTION_HOSPITAL = ErrorDetection(dataset=Hospital())
-ERROR_DETECTION_CUSTOM_EASY = ErrorDetection(dataset=CustomDataSet(pd.read_csv("data/error_detection/custom/dirty_dataframe_typos.csv"),
-                                                              pd.read_csv("data/error_detection/custom/clean_dataframe.csv"),
-                                                              "Custom_Typos"
-                                                            ))
-ERROR_DETECTION_CUSTOM_MID = ErrorDetection(dataset=CustomDataSet(pd.read_csv("data/error_detection/custom/dirty_data_wrong_cities.csv"),
-                                                              pd.read_csv("data/error_detection/custom/clean_dataframe.csv"),
-                                                              "Custom_Cities"
-                                                            ))
-ERROR_DETECTION_CUSTOM_HARD = ErrorDetection(dataset=CustomDataSet(pd.read_csv("data/error_detection/custom/dirty_dataframe_all_errors.csv"),
-                                                              pd.read_csv("data/error_detection/custom/clean_dataframe.csv"),
-                                                              "Custom_All"
-                                                            ))
-
-def test_errorDetection(
-    ed: ErrorDetection, result_path: str, grammar: Union[LlamaGrammar, None] = None
-) -> None:
-    with open(result_path, "a") as csv_file:
-        writer = csv.writer(csv_file, delimiter=",")  # type: ignore
-        for i in range(ITERATION_AMOUNT):
-            runtime_zeroshot, f1_zeroshot = ed.zero_shot(
-                prompt_template="Is there an error in {attr}?\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                log_id=f"_p1_{i}",
-                grammar=grammar,
-            )
-
-            writer.writerow([ed.dataset.name, "ZS", runtime_zeroshot, f1_zeroshot])
-
-            runtime_fewshot, f1_fewshot = ed.few_shot(
-                prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                log_id=f"_p1_{i}",
-                grammar=grammar,
-                custom_examples = "Country: Vietnam, City: Paris, Population: 5253000? Yes\n"+
-                "Country: New Zealand, City: Welington, Population: 212700? Yes\n"+
-                "Country: Saint Lucia, City: Castries, Population: 200000? Yes\n"+
-                "Country: Estonia, City: Montevideo, Population: 1? Yes\n"+
-                "Country: Australia, City: Canberra, Population: 395790? No\n"
-            )
-
-            writer.writerow([ed.dataset.name, "FS", runtime_fewshot, f1_fewshot])
-            csv_file.flush()
+from typing import List, Literal
+from experiment.errorDetection import (
+    ErrorDetection,
+    Flights,
+    Food,
+    Hospital,
+    CustomDataSet,
+    DataSet as EDDataset,
+)
+from experiment.duplicateDetection import (
+    DuplicateDetection,
+    Affiliation,
+    DataSet as DDDataset,
+)
 
 
-def test_duplicateDetection_different_grammar(logging_path: str, n_iterations=3):
-    N_ROWS = 50
-    N_DUPLICATES = 20
-    CHANCE_MULTIPLE_DUPLICATES = 0.3
+def test_errorDetection_customDataset(
+    logging_path: str,
+    n_iterations=5,
+    n_samples=100,
+    n_examples=3,
+):
+    """Excecutes an experiment to test the performance of the error detection on a custom dataset.
+
+    Args:
+        logging_path (str): The path where the log files are saved. Skips the experiment if the folder already exists.
+        n_iterations (int, optional): The number of times the experiment should be repeated. Defaults to 5.
+        n_samples (int, optional): The number of rows that are used in the experiment. Defaults to 100.
+        n_examples (int, optional): The number of rows that are used as examples in few shot experiments. Defaults to 3.
+    """
     if os.path.exists(logging_path):
-        raise FileExistsError(f"The directory '{logging_path}' already exists.")
-    dd = DuplicateDetection(Affiliation(), logging_path=logging_path)
-    for iteration in range(n_iterations):
+        print(
+            f"The directory '{logging_path}' already exists, skipping test_prompts_errordetection."
+        )
+        return
+    clean_dataframe = pd.read_csv("data/error_detection/custom/clean_dataframe.csv")
+    experiment_datasets: List[dict[Literal["name", "dirty_path"], str]] = [
+        {
+            "name": "Syntactic Errors",
+            "dirty_path": "data/error_detection/custom/dirty_dataframe_typos.csv",
+        },
+        {
+            "name": "Semantic Errors",
+            "dirty_path": "data/error_detection/custom/dirty_data_wrong_cities.csv",
+        },
+        {
+            "name": "All Errors",
+            "dirty_path": "data/error_detection/custom/dirty_dataframe_all_errors.csv",
+        },
+    ]
+
+    for _ in range(n_iterations):
+        for exp in experiment_datasets:
+            dataset = CustomDataSet(
+                dirty_data=pd.read_csv(exp["dirty_path"]),
+                clean_data=clean_dataframe,
+                name="Custom Typos",
+            )
+            ed = ErrorDetection(dataset=dataset, logging_path=logging_path)
+            ed.zero_shot(
+                n_samples=n_samples,
+                experiment_name=exp["name"],
+                experiment_namespace="ErrorDetection.ZeroShot.CustomDataset",
+            )
+            ed.few_shot(
+                n_samples=n_samples,
+                experiment_name=exp["name"],
+                experiment_namespace="ErrorDetection.FewShot.CustomDataset",
+                example_count=n_examples,
+                custom_examples="Country: Vietnam, City: Paris, Population: 5253000? Yes\n"
+                + "Country: New Zealand, City: Welington, Population: 212700? Yes\n"
+                + "Country: Saint Lucia, City: Castries, Population: 200000? Yes\n"
+                + "Country: Estonia, City: Montevideo, Population: 1? Yes\n"
+                + "Country: Australia, City: Canberra, Population: 395790? No\n",
+            )
+
+
+def test_duplicateDetection_different_grammar(
+    logging_path: str,
+    n_iterations=3,
+    n_rows=50,
+    n_duplicates=20,
+    chance_multiple_duplicates=0.3,
+    dataset: DDDataset = Affiliation(),
+):
+    """Excecutes an experiment to test the performance duplicate detection with and without grammar.
+
+    Args:
+        logging_path (str): The path where the log files are saved. Skips the experiment if the folder already exists.
+        n_iterations (int, optional): The number of times the experiment should be repeated. Defaults to 5.
+        n_rows (int, optional): The number of rows that are used in the experiment. . Defaults to 50.
+        n_duplicates (int, optional): The number of duplicate rows in the data. Defaults to 20.
+        chance_multiple_duplicates (float, optional): The chance that a row has multiple duplicates. Defaults to 0.3.
+        dataset (DDDataset, optional): A duplicate detection dataset. Defaults to Affiliation().
+    """
+    if os.path.exists(logging_path):
+        print(
+            f"The directory '{logging_path}' already exists, skipping test_prompts_errordetection."
+        )
+        return
+    dd = DuplicateDetection(dataset=dataset, logging_path=logging_path)
+    for _ in range(n_iterations):
         dd.zero_shot(
-            n_samples=N_ROWS,
-            rows_with_duplicates=N_DUPLICATES,
-            multiple_duplicate_chance=CHANCE_MULTIPLE_DUPLICATES,
+            n_samples=n_rows,
+            rows_with_duplicates=n_duplicates,
+            multiple_duplicate_chance=chance_multiple_duplicates,
             grammar=dd.GRAMMAR_YES_OR_NO,
-            experiment_name=f"WithGrammar-{iteration}",
+            experiment_name=f"With Grammar",
+            experiment_namespace="DuplicateDetection.ZeroShot.Grammar",
         )
         dd.zero_shot(
-            n_samples=N_ROWS,
-            rows_with_duplicates=N_DUPLICATES,
-            multiple_duplicate_chance=CHANCE_MULTIPLE_DUPLICATES,
-            experiment_name=f"NoGrammar-{iteration}",
+            n_samples=n_rows,
+            rows_with_duplicates=n_duplicates,
+            multiple_duplicate_chance=chance_multiple_duplicates,
+            experiment_name=f"Without Grammar",
+            experiment_namespace="DuplicateDetection.ZeroShot.Grammar",
         )
+
+
+def test_errorDetection_prompts(
+    logging_path: str,
+    n_iterations=5,
+    n_samples=100,
+    n_examples=3,
+    dataset: EDDataset = Flights(),
+):
+    """Excecute an experiment to test the perfomance of different prompts for error detection.
+
+    Args:
+        logging_path (str): The path where the log files are saved. Skips the experiment if the folder already exists.
+        n_iterations (int, optional): The number of times the experiment should be repeated. Defaults to 5.
+        n_samples (int, optional): The number of rows that are used in the experiment. Defaults to 100.
+        n_examples (int, optional): The number of rows that are used as examples in few shot experiments. Defaults to 3.
+    """
+    if os.path.exists(logging_path):
+        print(
+            f"The directory '{logging_path}' already exists, skipping test_prompts_errordetection."
+        )
+        return
+
+    experiment_prompts: List[dict[Literal["namespace", "name", "prompt"], str]] = [
+        {
+            "name": "Answer either yes or no",
+            "prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+        },
+        {
+            "name": "Answer in a single word",
+            "prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+        },
+        {
+            "name": "Precise and short",
+            "prompt": "You are a helpful assistant who is great in finding errors in tabular data. You answer as precise and short as possible.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+        },
+        {
+            "name": "Deep breath",
+            "prompt": "You are a helpful assistant who is great in finding errors in tabular data. Take a deep breath and than answer the following question.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+        },
+        {
+            "name": "No prompt introduction",
+            "prompt": "Q: Is there an error in {attr}?\n{context}\n\nA:",
+        },
+    ]
+
+    ed = ErrorDetection(dataset=dataset, logging_path=logging_path)
+    for _ in range(n_iterations):
+        for prompt in experiment_prompts:
+            ed.zero_shot(
+                n_samples=n_samples,
+                prompt_template=prompt["prompt"],
+                experiment_name=prompt["name"],
+                experiment_namespace="ErrorDetection.ZeroShot.CustomPrompt",
+            )
+    for _ in range(n_iterations):
+        for prompt in experiment_prompts:
+            ed.few_shot(
+                n_samples=n_samples,
+                prompt_template=prompt["prompt"],
+                experiment_name=prompt["name"],
+                example_count=n_examples,
+                experiment_namespace="ErrorDetection.FewShot.CustomPrompt",
+            )
 
 
 if __name__ == "__main__":
-    # test_duplicateDetection_different_grammar(
-    #     logging_path="keep_logs/duplicateDetection_grammar"
-    # )
-    # exit()
-    result_name = "custom_no_grammar_10x20"
-    # result_name = "custom_grammar_yes_or_no_10x20"
-    result_path = f"./analysis/data/{result_name}.csv"
-
-    with open(result_path, "w") as csv_file:
-        writer = csv.writer(csv_file, delimiter=",")  # type: ignore
-        writer.writerow(["Dataset", "Type", "Time", "F1-Score"])
-
-    print("START Easy")
-    test_errorDetection(ERROR_DETECTION_CUSTOM_EASY, result_path, GRAMMAR)
-    print("START Mid")
-    test_errorDetection(ERROR_DETECTION_CUSTOM_MID, result_path, GRAMMAR)
-    print("START Hard")
-    test_errorDetection(ERROR_DETECTION_CUSTOM_HARD, result_path, GRAMMAR)
-
-    # print("START Flight")
-    # test_errorDetection(ERROR_DETECTION_FLIGHTS, result_path, GRAMMAR)
-    # print("START Food")
-    # test_errorDetection(ERROR_DETECTION_FOOD, result_path, GRAMMAR)
-    # print("START Hospital")
-    # test(ERROR_DETECTION_HOSPITAL, result_path, GRAMMAR)
-
-
-"""
-def flight_test(result_path) -> None:
-    with open(result_path, "a") as csv_file:
-        writer = csv.writer(csv_file, delimiter=',') # type: ignore
-        for i in range(ITERATION_AMOUNT):
-            runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_FLIGHTS.zero_shot(
-                prompt_template="Is there an error in {attr}?\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                id=f"_p1_{i}",
-            )
-
-            writer.writerow(["Flight", "ZS", runtime_zeroshot, f1_zeroshot])
-
-            runtime_fewshot, f1_fewshot = ERROR_DETECTION_FLIGHTS.few_shot(
-                prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                id=f"_p1_{i}",
-                example_count=MAXIMUM_EXAMPLE_COUNT,
-            )
-
-            writer.writerow(["Flight", "FS", runtime_fewshot, f1_fewshot])
-
-            # zero_res = pd.DataFrame(
-            #     [["Flight", "ZS", runtime_zeroshot, f1_zeroshot]],
-            #     columns=["Dataset", "Type", "Time", "F1-Score"],
-            # )
-            # few_res = pd.DataFrame(
-            #     [["Flight", "FS", runtime_fewshot, f1_fewshot]],
-            #     columns=["Dataset", "Type", "Time", "F1-Score"],
-            # )
-
-            # data = pd.concat([data, zero_res, few_res], ignore_index=True)
-    # return data
-
-def food_test(result_path):
-    with open(result_path, "a") as csv_file:
-        writer = csv.writer(csv_file, delimiter=',') # type: ignore
-        for i in range(ITERATION_AMOUNT):
-            runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_FOOD.zero_shot(
-                prompt_template="Is there an error in {attr}?\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                id=f"_p2_{i}",
-            )
-
-            writer.writerow(["Flight", "ZS", runtime_zeroshot, f1_zeroshot])
-
-            runtime_fewshot, f1_fewshot = ERROR_DETECTION_FOOD.few_shot(
-                prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                id=f"_p2_{i}",
-                example_count=MAXIMUM_EXAMPLE_COUNT,
-            )
-
-            writer.writerow(["Flight", "FS", runtime_fewshot, f1_fewshot])
-
-            # zero_res = pd.DataFrame(
-            #     [["Food", "ZS", runtime_zeroshot, f1_zeroshot]],
-            #     columns=["Dataset", "Type", "Time", "F1-Score"],
-            # )
-            # few_res = pd.DataFrame(
-            #     [["Food", "FS", runtime_fewshot, f1_fewshot]],
-            #     columns=["Dataset", "Type", "Time", "F1-Score"],
-            # )
-            # data = pd.concat([data, zero_res, few_res], ignore_index=True)
-    # return data
-
-
-def hospital_test(result_path):
-    with open(result_path, "a") as csv_file:
-        writer = csv.writer(csv_file, delimiter=',') # type: ignore
-        for i in range(ITERATION_AMOUNT):
-            runtime_zeroshot, f1_zeroshot = ERROR_DETECTION_HOSPITAL.zero_shot(
-                prompt_template="Is there an error in {attr}?\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                id=f"_p3_{i}",
-            )
-
-            writer.writerow(["Flight", "ZS", runtime_zeroshot, f1_zeroshot])
-
-            runtime_fewshot, f1_fewshot = ERROR_DETECTION_HOSPITAL.few_shot(
-                prompt_template="Is there an error in {attr}?\n\n{example}\n\n{context}?",
-                n_samples=MAXIMUM_ROW_COUNT,
-                id=f"_p3_{i}",
-                example_count=MAXIMUM_EXAMPLE_COUNT,
-            )
-
-            writer.writerow(["Flight", "FS", runtime_fewshot, f1_fewshot])
-
-            # zero_res = pd.DataFrame(
-            #     [["Hospital", "ZS", runtime_zeroshot, f1_zeroshot]],
-            #     columns=["Dataset", "Type", "Time", "F1-Score"],
-            # )
-            # few_res = pd.DataFrame(
-            #     [["Hospital", "FS", runtime_fewshot, f1_fewshot]],
-            #     columns=["Dataset", "Type", "Time", "F1-Score"],
-            # )
-            # data = pd.concat([data, zero_res, few_res], ignore_index=True)
-    # return data
-
-
-# if __name__ == "__main__":
-#     df = pd.DataFrame([], columns=["Dataset", "Type", "Time", "F1-Score"])
-#     result_name = "test"
-#     print("START Flight")
-#     df = flight_test(df)
-#     print("START Food")
-#     df = food_test(df)
-#     print("START Hospital")
-#     df = hospital_test(df)
-#     df.to_csv(f"./analysis/data/{result_name}.csv")
-"""
+    test_errorDetection_customDataset(
+        logging_path="logs/ed_customDataset", n_iterations=1, n_samples=5
+    )
+    # test_duplicateDetection_different_grammar(logging_path="keep_logs/dd_grammar")
+    test_errorDetection_prompts(
+        logging_path="logs/ed_prompts", n_iterations=1, n_samples=5
+    )
