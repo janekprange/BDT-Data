@@ -21,7 +21,7 @@ class ErrorDetection(SetupExperiment):
         dataset: DataSet,
         skip_prompting: bool = False,
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-        model_size: Literal["small", "medium", "large"] = "large",
+        model_size: Literal["small", "medium", "large"] = "small",
     ) -> None:
         """
         A class that wraps the error detection experiments.

@@ -29,11 +29,11 @@ class SetupExperiment:
         model_name = ""
         match model_size:
             case "small":
-                model_name = "meta-llama/Llama-2-7b-hf"
+                model_name = "meta-llama/Llama-2-7b-chat-hf"
             case "medium":
-                model_name = "meta-llama/Llama-2-13b-hf"
+                model_name = "meta-llama/Llama-2-13b-chat-hf"
             case "large":
-                model_name = "meta-llama/Llama-2-70b-hf"
+                model_name = "meta-llama/Llama-2-70b-chat-hf"
             case _:
                 raise ValueError("Unknown model size")
 
@@ -82,21 +82,25 @@ class SetupExperiment:
             num_return_sequences=1,
             eos_token_id=[
                 self.tokenizer.eos_token_id,
-                self.tokenizer.encode("\n", add_special_tokens=False)[-1],
+                # self.tokenizer.encode("\n", add_special_tokens=False)[-1],
             ],
-            max_length=200,
+            max_length=250,
         )
 
-        for seq in sequences:  # type: ignore
-            print("------- Result -------")
-            print(f"{seq['generated_text']}")  # type: ignore
-            print("----------------------")
-
         end_time = time.time()
-        log_response = {**response, "prompt": prompt, "correct_answer": correct_answer, "runtime": end_time - start_time}  # type: ignore
+        if sequences[0]["generated_text"] is None:  # type: ignore
+            logger.error(f"Empty respone for id {id}")
+            return ""
+        response = sequences[0]["generated_text"].replace(prompt, "").strip()  # type: ignore
+        log_response = {
+            "response": response,
+            "prompt": prompt,
+            "correct_answer": correct_answer,
+            "runtime": end_time - start_time,
+        }
         logger.log_response(id=id, response=log_response)
 
-        return response["choices"][0]["text"]  # type: ignore
+        return response
 
     def _prompt_probabilities(
         self,
