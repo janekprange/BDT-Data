@@ -22,16 +22,18 @@ class DuplicateDetection(SetupExperiment):
         self.dataset = dataset
         self.logger = Logger(name="DuplicateDetection", path=logging_path)
 
-    def compare_rows(
+    def _execute(
         self,
         n_samples: int,
         rows_with_duplicates: int,
         multiple_duplicate_chance: float = 0,
         grammar: Union[LlamaGrammar, None] = None,
         prompt_template: str = "Are these two rows duplicates?\n{row1}\n{row2}",
+        example_count: int = 0,
+        custom_examples: str = "",
         log_id: Union[int, str] = "",
         experiment_name="Duplicate Detection",
-    ) -> Tuple[float, float]:
+    ):
         self.logger.info(f"Started duplicate detection for {n_samples} rows")
 
         result = {
@@ -54,12 +56,26 @@ class DuplicateDetection(SetupExperiment):
             for index2, row2 in sample_data.iterrows():
                 if int(index1) >= int(index2):  # type: ignore
                     continue
+                if example_count > 0:
+                    examples = self.dataset.generate_examples(amount=example_count)
+                    prompt = prompt_template.format(
+                        row1=serialize_row(row1),
+                        row2=serialize_row(row2),
+                        examples=examples,
+                    )
+                # otherwise create the promt with custom examples
+                elif custom_examples != "":
+                    prompt = prompt_template.format(
+                        row1=serialize_row(row1),
+                        row2=serialize_row(row2),
+                        examples=custom_examples,
+                    )
+                else:
+                    prompt = prompt_template.format(
+                        row1=serialize_row(row1), row2=serialize_row(row2)
+                    )
                 correct_value = self.dataset.isduplicate(index1, index2)
                 y_true.append(int(correct_value))
-
-                prompt = prompt_template.format(
-                    row1=serialize_row(row1), row2=serialize_row(row2)
-                )
 
                 timestamp = int(time.time_ns() / 10**6)
                 response = self._prompt(
@@ -114,3 +130,47 @@ class DuplicateDetection(SetupExperiment):
             f"Finished {experiment_name} in {time.strftime('%H:%M:%S', time.gmtime(runtime))}"
         )
         return runtime, f1
+
+    def zero_shot(
+        self,
+        n_samples: int,
+        rows_with_duplicates: int,
+        multiple_duplicate_chance: float = 0,
+        grammar: Union[LlamaGrammar, None] = None,
+        prompt_template: str = "Are these two rows duplicates?\n{row1}\n{row2}",
+        log_id: Union[int, str] = "",
+        experiment_name="Duplicate Detection",
+    ) -> Tuple[float, float]:
+        return self._execute(
+            n_samples=n_samples,
+            rows_with_duplicates=rows_with_duplicates,
+            multiple_duplicate_chance=multiple_duplicate_chance,
+            grammar=grammar,
+            prompt_template=prompt_template,
+            log_id=log_id,
+            experiment_name=experiment_name,
+        )
+
+    def few_shot(
+        self,
+        n_samples: int,
+        rows_with_duplicates: int,
+        multiple_duplicate_chance: float = 0,
+        grammar: Union[LlamaGrammar, None] = None,
+        prompt_template: str = "Are these two rows duplicates?{examples}\n\n{row1}\n{row2}",
+        log_id: Union[int, str] = "",
+        experiment_name="Duplicate Detection",
+        example_count: int = 2,
+        custom_examples: str = "",
+    ) -> Tuple[float, float]:
+        return self._execute(
+            n_samples=n_samples,
+            rows_with_duplicates=rows_with_duplicates,
+            multiple_duplicate_chance=multiple_duplicate_chance,
+            grammar=grammar,
+            prompt_template=prompt_template,
+            log_id=log_id,
+            experiment_name=experiment_name,
+            custom_examples=custom_examples,
+            example_count=example_count,
+        )

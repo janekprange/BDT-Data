@@ -1,6 +1,7 @@
 from typing import List
 import numpy as np
 import pandas as pd
+from ..setupExperiment import serialize_row
 
 
 class DataSet:
@@ -13,6 +14,22 @@ class DataSet:
 
     def isduplicate(self, id1, id2) -> bool:
         return id2 in self.mapping[self.mapping[0] == id1][1].values
+
+    def generate_examples(self, amount: int = 2) -> str:
+        random_indices = np.random.permutation(self.data.index)[: 2 * amount]
+        result_str = ""
+        for i in range(amount):
+            idx1 = random_indices[2 * i]
+            idx2 = random_indices[2 * i + 1]
+            result_str += serialize_row(self.data.loc[idx1])
+            result_str += "\n"
+            result_str += serialize_row(self.data.loc[idx2])
+            result_str += "\n"
+            if self.isduplicate(idx1, idx2):
+                result_str += "Yes, they are duplicates.\n"
+            else:
+                result_str += "No, they are not duplicates.\n"
+        return result_str
 
     def random_sample(
         self,
