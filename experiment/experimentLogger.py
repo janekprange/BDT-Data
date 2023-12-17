@@ -20,7 +20,7 @@ class Logger:
         if not os.path.isfile(f"{path}/experiment-results.csv"):
             with open(f"{path}/experiment-results.csv", "w") as file:
                 file.write(
-                    f"Namespace,Name,Dataset,Number of Rows,Number of Examples,Runtime,F1,Precision,Recall,Accuracy,True pos,True neg,False pos,False neg,Prompt \n"
+                    f"Namespace,Name,Dataset,Number of Rows,Number of Examples,Runtime,F1,Precision,Recall,Accuracy,True pos,True neg,False pos,False neg,Prompt\n"
                 )
 
         logging.basicConfig(
