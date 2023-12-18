@@ -72,8 +72,6 @@ class ErrorDetection(SetupExperiment):
             for column, (attribute, value) in enumerate(row.items()):
                 # create the promt with custom examples
                 if custom_examples_dataset is not None:
-                    print("CUSTOM EXAMPLES")
-                    
                     # we want to generate the examples with all the row of the example dataset
                     all_rows_count = custom_examples_dataset.clean_set.shape[0]
                     examples = custom_examples_dataset.generate_examples(
@@ -84,8 +82,6 @@ class ErrorDetection(SetupExperiment):
                     )
                 # otherwise create promt with examples if needed
                 elif generated_example_count > 0:
-                    print("GENERATED EXAMPLES")
-                    
                     examples = self.dataset.generate_examples(
                         column_id=column, amount=generated_example_count
                     )
@@ -95,8 +91,6 @@ class ErrorDetection(SetupExperiment):
                 
                 # no examples
                 else:
-                    print("NO EXAMPLES")
-                    
                     prompt = prompt_template.format(
                         attr=attribute, val=value, context=serialized_row
                     )
