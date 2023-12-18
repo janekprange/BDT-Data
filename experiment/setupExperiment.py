@@ -84,7 +84,7 @@ class SetupExperiment:
                 self.tokenizer.eos_token_id,
                 # self.tokenizer.encode("\n", add_special_tokens=False)[-1],
             ],
-            max_length=250,
+            max_length=252,
         )
 
         end_time = time.time()

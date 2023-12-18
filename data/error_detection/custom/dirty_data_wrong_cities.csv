@@ -1,12 +1,12 @@
-Country,City,Population,Country Codes
-England,Berlin,63500,GBR
+Country,City,Population,ISO 3166-1 Alpha3 Code
+England,Berlin,3645000,GBR
 United States of America,Miami,436000,USA
 Spain,Paris,5850000,ESP
-Japan,Florida,1460000,JPN
+Japan,Florida,21780000,JPN
 Philippines,Manila,13500000,PHL
 Germany,Hannover,538000,DEU
 Netherlands,Groningen,235000,NLD
-Türkiye,Nairobi,15800000,TUR
+Türkiye,Nairobi,4397000,TUR
 South Africa,Queenstown,68900,ZAF
 United States of America,Phoenix,1650000,USA
 China,Casablanca,29200000,CHN
@@ -16,6 +16,6 @@ Mali,Casablanca,2930000,MLI
 Nigeria,Lagos,13500000,NGA
 Mexico,Guadalajara,5040000,MEX
 Thailand,Hat Yai,149000,THA
-United Arab Emirates,Athens,3140000,ARE
-Ireland,Shanghai,1345402,IRL
+United Arab Emirates,Athens,650000,ARE
+Ireland,Shanghai,26320000,IRL
 Greece,Rome,3150000,GRC

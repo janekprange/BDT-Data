@@ -45,7 +45,7 @@ class ErrorDetection(SetupExperiment):
         experiment_namespace: str,
         dataset_name: str,
         generated_example_count: int = 0,
-        custom_examples: str = "",
+        custom_examples_dataset: Union[DataSet, None] = None,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
     ) -> Tuple[float, float]:
@@ -70,20 +70,33 @@ class ErrorDetection(SetupExperiment):
         for row_index, row in dirty_data.iterrows():
             serialized_row = serialize_row(row)
             for column, (attribute, value) in enumerate(row.items()):
-                # create promt with examples if needed
-                if generated_example_count > 0:
+                # create the promt with custom examples
+                if custom_examples_dataset is not None:
+                    print("CUSTOM EXAMPLES")
+                    
+                    # we want to generate the examples with all the row of the example dataset
+                    all_rows_count = custom_examples_dataset.clean_set.shape[0]
+                    examples = custom_examples_dataset.generate_examples(
+                        column_id=column, amount=all_rows_count
+                    )
+                    prompt = prompt_template.format(
+                        attr=attribute, context=serialized_row, example=examples
+                    )
+                # otherwise create promt with examples if needed
+                elif generated_example_count > 0:
+                    print("GENERATED EXAMPLES")
+                    
                     examples = self.dataset.generate_examples(
                         column_id=column, amount=generated_example_count
                     )
                     prompt = prompt_template.format(
                         attr=attribute, context=serialized_row, example=examples
                     )
-                # otherwise create the promt with custom examples
-                elif custom_examples != "":
-                    prompt = prompt_template.format(
-                        attr=attribute, context=serialized_row, example=custom_examples
-                    )
+                
+                # no examples
                 else:
+                    print("NO EXAMPLES")
+                    
                     prompt = prompt_template.format(
                         attr=attribute, val=value, context=serialized_row
                     )
@@ -200,7 +213,7 @@ class ErrorDetection(SetupExperiment):
         example_count: int = 2,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
-        custom_examples: str = "",
+        custom_examples_dataset: Union[DataSet, None] = None,
         experiment_name="",
         experiment_namespace="ErrorDetection.FewShot",
     ) -> Tuple[float, float]:
@@ -238,5 +251,5 @@ class ErrorDetection(SetupExperiment):
             generated_example_count=example_count,
             log_id=f"ed_fs{log_id}",
             grammar=grammar,
-            custom_examples=custom_examples,
+            custom_examples_dataset=custom_examples_dataset,
         )

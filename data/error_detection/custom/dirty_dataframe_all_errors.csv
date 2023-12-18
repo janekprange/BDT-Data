@@ -1,15 +1,15 @@
-Country,City,Population,Country Codes
+Country,City,Population,ISO 3166-1 Alpha3 Code
 England,Greenwich,63500,GBR
 United States of America,Miamia,436000,USA
-Spain,Barcelona,5850000,ESP
+France,Barcelona,5850000,ESP
 Japan,Kyoto,146000,JPN
-Philippines,Manila,13500000,PHL
+Autralia,Manila,13500000,PHL
 Germany,Hannover,538000,DEU
 Netherlands,Groningen,235000,NLD
 Türkiye,Istanbul,15800000,TUR
 South Africa,Queenstown,68900,ZAF
 United States of America,Phoenix,1650000,USA
-China,Shanghai,29200000,CHN
+Japan,Shanghai,29200000,CHN
 Hungary,Budapest,1760000,HUN
 Egypt,New Kairo,297000,EGY
 Mali,Bamako,2930000,MLI
