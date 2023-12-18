@@ -155,23 +155,27 @@ def test_errorDetection_prompts(
         {
             "name": "Answer either yes or no",
             "zeroshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
-            "fewshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nIs there an error in {attr}?\n{example}\nQ:{context}\n\nA:",
+            "fewshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nIs there an error in {attr}?\n{example}\nQ: {context}  A:",
         },
         {
             "name": "Answer in a single word",
             "zeroshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+            "fewshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word.\n\nIs there an error in {attr}?\n{example}\nQ: {context}  A:",
         },
         {
             "name": "Precise and short",
             "zeroshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You answer as precise and short as possible.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+            "fewshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. You answer as precise and short as possible.\n\nIs there an error in {attr}?\n{example}\nQ: {context}  A:",
         },
         {
             "name": "Deep breath",
             "zeroshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. Take a deep breath and than answer the following question.\n\nQ: Is there an error in {attr}?\n{context}\n\nA:",
+            "fewshot_prompt": "You are a helpful assistant who is great in finding errors in tabular data. Take a deep breath and than answer the following question.\n\nIs there an error in {attr}?\n{example}\nQ: {context}  A:",
         },
         {
             "name": "No prompt introduction",
             "zeroshot_prompt": "Q: Is there an error in {attr}?\n{context}\n\nA:",
+            "fewshot_prompt": "Is there an error in {attr}?\n{example}\nQ: {context}  A:",
         },
     ]
 
@@ -184,15 +188,15 @@ def test_errorDetection_prompts(
                 experiment_name=prompt["name"],
                 experiment_namespace="ErrorDetection.ZeroShot.CustomPrompt",
             )
-    # for _ in range(n_iterations):
-    #     for prompt in experiment_prompts:
-    #         ed.few_shot(
-    #             n_samples=n_samples,
-    #             prompt_template=prompt["fewshot_prompt"],
-    #             experiment_name=prompt["name"],
-    #             example_count=n_examples,
-    #             experiment_namespace="ErrorDetection.FewShot.CustomPrompt",
-    #         )
+    for _ in range(n_iterations):
+        for prompt in experiment_prompts:
+            ed.few_shot(
+                n_samples=n_samples,
+                prompt_template=prompt["fewshot_prompt"],
+                experiment_name=prompt["name"],
+                example_count=n_examples,
+                experiment_namespace="ErrorDetection.FewShot.CustomPrompt",
+            )
 
 
 if __name__ == "__main__":

@@ -78,7 +78,9 @@ class DataSet:
         # it is now a matter of converting the sample into a string
         result_str = ""
         for i in range(amount):
+            result_str += "Q: "
             result_str += serialize_row(sampleDataDirty.iloc[i])
+            result_str += "  A:"
 
             # the example string also contains corrections of the sample rows
             error_string = " No"
@@ -120,4 +122,4 @@ class CustomDataSet(DataSet):
     def __init__(self, dirty_data: pd.DataFrame, clean_data: pd.DataFrame, name: str):
         self.dirty_set: pd.DataFrame = dirty_data
         self.clean_set: pd.DataFrame = clean_data
-        self.name = f'{name}'
+        self.name = f"{name}"
