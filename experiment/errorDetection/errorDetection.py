@@ -19,9 +19,9 @@ class ErrorDetection(SetupExperiment):
     def __init__(
         self,
         dataset: DataSet,
-        skip_prompting: bool = False,
         logging_path: str = f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-        model_size: Literal["small", "medium", "large"] = "small",
+        *args,
+        **kwargs,
     ) -> None:
         """
         A class that wraps the error detection experiments.
@@ -32,7 +32,7 @@ class ErrorDetection(SetupExperiment):
             logging_path (str, optional): The path the logging files are written to. Defaults to f"./logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}".
             model_size (Literal[&quot;small&quot;, &quot;medium&quot;, &quot;large&quot;], optional): The model is available in different sizes/complexities. With a larger model comes a better quality and a worse runtime. Defaults to "large".
         """
-        super().__init__(skip_prompting, model_size=model_size)
+        super(ErrorDetection, self).__init__(*args, **kwargs)
         self.dataset = dataset
         self.logger = Logger(name="ErrorDetection", path=logging_path)
 
@@ -88,7 +88,7 @@ class ErrorDetection(SetupExperiment):
                     prompt = prompt_template.format(
                         attr=attribute, context=serialized_row, example=examples
                     )
-                
+
                 # no examples
                 else:
                     prompt = prompt_template.format(
