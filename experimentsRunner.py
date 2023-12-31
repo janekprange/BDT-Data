@@ -111,7 +111,6 @@ def test_errorDetection_prompts(
                     name=exp["name"],
                 )
                 ed_meta = ErrorDetection(dataset=dataset, logging_path=logging_path, model_source="meta")
-                '''
                 for _ in range(n_iterations):
                     ed_meta.zero_shot(
                         n_samples=n_samples,
@@ -119,7 +118,7 @@ def test_errorDetection_prompts(
                         experiment_name=prompt["name"],
                         experiment_namespace="Meta.ErrorDetection.ZeroShot.CustomDataset",
                     )
-                '''    
+                  
                 for _ in range(n_iterations):
                     ed_meta.few_shot(
                         n_samples=n_samples,
@@ -370,7 +369,7 @@ def test_duplicateDetection_different_grammar(
 
 
 if __name__ == "__main__":
-    test_errorDetection_prompts(logging_path="keep_logs/test_promts_meta")
+    test_errorDetection_prompts(logging_path="keep_logs/test_promts_meta", n_iterations=3)
     # test_errorDetection_prompts(logging_path="keep_logs/tiny_throwaway_promts_test",n_iterations=1,n_samples=3,n_examples=2)
     # test_errorDetection_Meta_vs_Bloke(logging_path="keep_logs/test_ed_Meta_vs_Bloke_only_Bloke", skip_meta=False, skip_bloke=False)
     # test_errorDetection_customDataset(logging_path="keep_logs/test_ed_customDataset")

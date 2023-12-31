@@ -75,7 +75,7 @@ class ErrorDetection(SetupExperiment):
                 if custom_examples_dataset is not None:
                     # we want to generate the examples string with at least one and at most all examples
                     max_examples = custom_examples_dataset.clean_set.shape[0]
-                    all_rows_count = max_examples if generated_example_count == 0 else min(1, max(max_examples, generated_example_count))
+                    all_rows_count = max_examples if generated_example_count == 0 else max(1, min(max_examples, generated_example_count))
                     examples = custom_examples_dataset.generate_examples(
                         column_id=column, amount=all_rows_count, q_and_A=q_and_A
                     )
