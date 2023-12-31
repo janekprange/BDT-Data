@@ -122,8 +122,8 @@ class SetupExperiment:
                 top_k=10,
                 num_return_sequences=1,
                 eos_token_id=[
-                    self.tokenizer.eos_token_id,
-                    # self.tokenizer.encode("\n", add_special_tokens=False)[-1], # only return the first line
+                    # self.tokenizer.eos_token_id,
+                    self.tokenizer.encode("\n", add_special_tokens=False)[-1], # only return the first line
                 ],
                 max_length=500,
             )

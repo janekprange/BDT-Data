@@ -79,9 +79,9 @@ class DataSet:
         # it is now a matter of converting the sample into a string
         result_str = ""
         for i in range(amount):
-            if(q_and_A): result_str += "Q: "
+            if(q_and_A): result_str += "\nQ: "
             result_str += serialize_row(sampleDataDirty.iloc[i])
-            if(q_and_A): result_str += "  A:"
+            if(q_and_A): result_str += "\n\nA: "
             else: result_str += self.end_token
 
             # the example string also contains corrections of the sample rows
