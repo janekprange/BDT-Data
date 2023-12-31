@@ -9,10 +9,11 @@ from ..setupExperiment import serialize_row
 class DataSet:
     """This class encasulates all the functionality related to the error detection datasets."""
 
-    def __init__(self, path_dirty: str, path_clean: str, name: str):
+    def __init__(self, path_dirty: str, path_clean: str, name: str, end_token:str = "?"):
         self.dirty_set: pd.DataFrame = pd.read_csv(path_dirty)
         self.clean_set: pd.DataFrame = pd.read_csv(path_clean)
         self.name = name
+        self.end_token = end_token
 
     def get(self, dirty: bool) -> pd.DataFrame:
         """Returns a dataset as a Dataframe based on the calling object.
@@ -70,7 +71,7 @@ class DataSet:
         clean_sample = clean_sample.iloc[permutation]
         return (dirty_sample, clean_sample)
 
-    def generate_examples(self, column_id: int, amount: int = 1) -> str:
+    def generate_examples(self, column_id: int, amount: int = 1, q_and_A: bool = False) -> str:
         """Returns a string with `amount` corrected random sample rows. There are no duplicate rows."""
         # this call already generates the sample
         sampleDataDirty, sampleDataClean = self.random_sample(amount)
@@ -78,9 +79,10 @@ class DataSet:
         # it is now a matter of converting the sample into a string
         result_str = ""
         for i in range(amount):
-            result_str += "Q: "
+            if(q_and_A): result_str += "Q: "
             result_str += serialize_row(sampleDataDirty.iloc[i])
-            result_str += "  A:"
+            if(q_and_A): result_str += "  A:"
+            else: result_str += self.end_token
 
             # the example string also contains corrections of the sample rows
             error_string = " No"
@@ -119,7 +121,8 @@ class Hospital(DataSet):
 
 
 class CustomDataSet(DataSet):
-    def __init__(self, dirty_data: pd.DataFrame, clean_data: pd.DataFrame, name: str):
+    def __init__(self, dirty_data: pd.DataFrame, clean_data: pd.DataFrame, name: str, end_token:str = "?"):
         self.dirty_set: pd.DataFrame = dirty_data
         self.clean_set: pd.DataFrame = clean_data
         self.name = f"{name}"
+        self.end_token = end_token

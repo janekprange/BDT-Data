@@ -46,6 +46,7 @@ class ErrorDetection(SetupExperiment):
         dataset_name: str,
         generated_example_count: int = 0,
         custom_examples_dataset: Union[DataSet, None] = None,
+        q_and_A: bool = False,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
     ) -> Tuple[float, float]:
@@ -75,7 +76,7 @@ class ErrorDetection(SetupExperiment):
                     # we want to generate the examples with all the row of the example dataset
                     all_rows_count = custom_examples_dataset.clean_set.shape[0]
                     examples = custom_examples_dataset.generate_examples(
-                        column_id=column, amount=all_rows_count
+                        column_id=column, amount=all_rows_count, q_and_A=q_and_A
                     )
                     prompt = prompt_template.format(
                         attr=attribute, context=serialized_row, example=examples
@@ -83,7 +84,7 @@ class ErrorDetection(SetupExperiment):
                 # otherwise create promt with examples if needed
                 elif generated_example_count > 0:
                     examples = self.dataset.generate_examples(
-                        column_id=column, amount=generated_example_count
+                        column_id=column, amount=generated_example_count, q_and_A=q_and_A
                     )
                     prompt = prompt_template.format(
                         attr=attribute, context=serialized_row, example=examples
@@ -95,7 +96,7 @@ class ErrorDetection(SetupExperiment):
                         attr=attribute, val=value, context=serialized_row
                     )
 
-                correct_value: bool = (
+                correct_value: bool = bool(
                     clean_data.loc[[row_index]][attribute].values[0] != value
                 )
                 y_true.append(int(correct_value))
@@ -158,7 +159,7 @@ class ErrorDetection(SetupExperiment):
     def zero_shot(
         self,
         data_indices: List[int] | None = None,
-        prompt_template: str = "Is there an error in {attr}?\n{context}?",
+        prompt_template: str = "Is there an error in {attr}?\n{context}? ",
         n_samples: int = 100,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
@@ -202,12 +203,13 @@ class ErrorDetection(SetupExperiment):
     def few_shot(
         self,
         data_indices: List[int] | None = None,
-        prompt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}?",
+        prompt_template: str = "Is there an error in {attr}?\n\n{example}\n\n{context}? ",
         n_samples: int = 100,
         example_count: int = 2,
         log_id: Union[int, str] = "",
         grammar: Union[LlamaGrammar, None] = None,
         custom_examples_dataset: Union[DataSet, None] = None,
+        q_and_A: bool = False,
         experiment_name="",
         experiment_namespace="ErrorDetection.FewShot",
     ) -> Tuple[float, float]:
@@ -243,6 +245,7 @@ class ErrorDetection(SetupExperiment):
             experiment_namespace=experiment_namespace,
             dataset_name=self.dataset.name,
             generated_example_count=example_count,
+            q_and_A=q_and_A,
             log_id=f"ed_fs{log_id}",
             grammar=grammar,
             custom_examples_dataset=custom_examples_dataset,
