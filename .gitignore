@@ -1,5 +1,14 @@
-logs
-keep_logs
+/logs/**
+
+# !/keep_logs/
+# /keep_logs/**
+# !keep_logs/overview.md
+# !/keep_logs/2023-11-22_21-38-30/experiment-results.csv
+
+/keep_logs/**/logs.csv
+/keep_logs/**/ErrorDetection/*
+/keep_logs/**/DuplicateDetection/*
+
 analysis/data
 analysis/img
 

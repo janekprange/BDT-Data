@@ -1,0 +1,4 @@
+Name, Dataset, Number of Rows, Number of Examples, Runtime, F1, True pos, True neg, False pos, False neg, Prompt 
+NoGrammar-0, Affiliation, 5, 0, 00:00:25, 0.33333333333333337, 2, 0, 8, 0, Are these two rows duplicates?{examples}\n\n{row1}\n{row2} 
+NoGrammar-1, Affiliation, 5, 0, 00:00:38, 0.33333333333333337, 2, 0, 8, 0, Are these two rows duplicates?{examples}\n\n{row1}\n{row2} 
+NoGrammar-2, Affiliation, 5, 0, 00:00:43, 0.3636363636363636, 2, 1, 7, 0, Are these two rows duplicates?{examples}\n\n{row1}\n{row2} 

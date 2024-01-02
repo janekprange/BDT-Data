@@ -1,0 +1,7 @@
+Name, Dataset, Number of Rows, Number of Examples, Runtime, F1, True pos, True neg, False pos, False neg, Prompt 
+WithGrammar-0, Affiliation, 50, 0, 00:01:21, 0.027972027972027972, 2, 1084, 107, 32, Are these two rows duplicates?\n{row1}\n{row2} 
+NoGrammar-0, Affiliation, 50, 0, 01:19:15, 0.05405405405405404, 9, 901, 291, 24, Are these two rows duplicates?\n{row1}\n{row2} 
+WithGrammar-1, Affiliation, 50, 0, 00:01:17, 0.08235294117647059, 7, 1062, 116, 40, Are these two rows duplicates?\n{row1}\n{row2} 
+NoGrammar-1, Affiliation, 50, 0, 01:14:07, 0.03932584269662921, 7, 876, 322, 20, Are these two rows duplicates?\n{row1}\n{row2} 
+WithGrammar-2, Affiliation, 50, 0, 00:01:18, 0.0425531914893617, 3, 1087, 96, 39, Are these two rows duplicates?\n{row1}\n{row2} 
+NoGrammar-2, Affiliation, 50, 0, 01:18:16, 0.05952380952380953, 10, 899, 295, 21, Are these two rows duplicates?\n{row1}\n{row2} 

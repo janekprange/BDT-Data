@@ -1,0 +1,7 @@
+Name, Dataset, Number of Rows, Number of Examples, Runtime, F1, True pos, True neg, False pos, False neg, Prompt 
+Error Detection Zero Shot, Flights, 30, 0, 00:12:18, 0.19047619047619047, 8, 104, 11, 57, Is there an error in {attr}?\n\n{context}? 
+Error Detection Few Shot, Flights, 30, 3, 00:34:54, 0.45283018867924535, 36, 57, 68, 19, Is there an error in {attr}?\n\n{example}\n\n{context}? 
+Error Detection Zero Shot, Flights, 30, 0, 00:12:23, 0.19047619047619044, 10, 85, 13, 72, Is there an error in {attr}?\n\n{context}? 
+Error Detection Few Shot, Flights, 30, 3, 00:34:43, 0.4974093264248705, 48, 35, 78, 19, Is there an error in {attr}?\n\n{example}\n\n{context}? 
+Error Detection Zero Shot, Flights, 30, 0, 00:12:00, 0.1971830985915493, 7, 116, 9, 48, Is there an error in {attr}?\n\n{context}? 
+Error Detection Few Shot, Flights, 30, 3, 00:35:00, 0.4419889502762431, 40, 39, 84, 17, Is there an error in {attr}?\n\n{example}\n\n{context}? 

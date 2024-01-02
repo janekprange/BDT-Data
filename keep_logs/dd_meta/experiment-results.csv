@@ -1,0 +1,7 @@
+Namespace,Name,Dataset,Number of Rows,Number of Examples,Runtime,F1,Precision,Recall,Accuracy,True pos,True neg,False pos,False neg,Prompt
+"DuplicateDetection.Meta.ZeroShot","Meta Zero Shot",Affiliation,20,0,00:04:46,0.1981981981981982,0.1111111111111111,0.9166666666666666,0.531578947368421,11,90,88,1,"Q: Are these two rows duplicates?\n{row1}\n{row2} A:"
+"DuplicateDetection.Meta.FewShot","Meta Few Shot",Affiliation,20,0,00:02:02,0.05714285714285715,0.030303030303030304,0.5,0.4789473684210526,3,88,96,3,"Q: Are these two rows duplicates?{examples}\n\n{row1}\n{row2} A:"
+"DuplicateDetection.Meta.ZeroShot","Meta Zero Shot",Affiliation,20,0,00:05:26,0.09615384615384616,0.05102040816326531,0.8333333333333334,0.5052631578947369,5,91,93,1,"Q: Are these two rows duplicates?\n{row1}\n{row2} A:"
+"DuplicateDetection.Meta.FewShot","Meta Few Shot",Affiliation,20,0,00:02:04,0.05172413793103448,0.02702702702702703,0.6,0.42105263157894735,3,77,108,2,"Q: Are these two rows duplicates?{examples}\n\n{row1}\n{row2} A:"
+"DuplicateDetection.Meta.ZeroShot","Meta Zero Shot",Affiliation,20,0,00:04:09,0.10526315789473685,0.056818181818181816,0.7142857142857143,0.5526315789473685,5,100,83,2,"Q: Are these two rows duplicates?\n{row1}\n{row2} A:"
+"DuplicateDetection.Meta.FewShot","Meta Few Shot",Affiliation,20,0,00:01:55,0.02531645569620253,0.014084507042253521,0.125,0.5947368421052631,1,112,70,7,"Q: Are these two rows duplicates?{examples}\n\n{row1}\n{row2} A:"
