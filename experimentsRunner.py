@@ -452,8 +452,8 @@ if __name__ == "__main__":
     # test_errorDetection_prompts(logging_path="keep_logs/tiny_throwaway_promts_test",n_iterations=1,n_samples=3,n_examples=2)
     test_errorDetection_Meta_vs_Bloke_flights_data(
         logging_path="keep_logs/test_ed_Meta_vs_Bloke_flights",
-        n_iterations=1,
-        n_samples=1,
+        n_iterations=3,
+        n_samples=100,
         n_examples=5,
     )
     test_errorDetection_Meta_vs_Bloke(
