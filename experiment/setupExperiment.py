@@ -125,7 +125,7 @@ class SetupExperiment:
                     # self.tokenizer.eos_token_id,
                     self.tokenizer.encode("\n", add_special_tokens=False)[-1], # only return the first line
                 ],
-                max_length=500,
+                max_length=700,
             )
 
             end_time = time.time()

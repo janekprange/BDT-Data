@@ -217,7 +217,7 @@ def test_errorDetection_Meta_vs_Bloke(
                         clean_data=examples_clean_data,
                         name=exp["name"],
                     ),
-                    q_and_A=False,
+                    q_and_A=True,
                     grammar=ErrorDetection.GRAMMAR_YES_OR_NO,
                     prompt_template=PROMPT_FS,
                 )
@@ -251,9 +251,78 @@ def test_errorDetection_Meta_vs_Bloke(
                         clean_data=examples_clean_data,
                         name=exp["name"],
                     ),
-                    q_and_A=False,
+                    q_and_A=True,
                     prompt_template=PROMPT_FS,
                 )
+
+
+def test_errorDetection_Meta_vs_Bloke_flights_data(
+    logging_path: str,
+    n_iterations=3,
+    n_samples=20,
+    n_examples=5,
+):
+    """Excecutes an experiment to test the performance of both the Meta model and the theBloke model using the flights dataset.
+
+    Args:
+        logging_path (str): The path where the log files are saved. Skips the experiment if the folder already exists.
+        n_iterations (int, optional): The number of times the experiment should be repeated. Defaults to 5.
+        n_samples (int, optional): The number of rows that are used in the experiment. Defaults to 100.
+        n_examples (int, optional): The number of rows that are used as examples in few shot experiments. Defaults to 3.
+    """
+    if os.path.exists(logging_path):
+        print(
+            f"The directory '{logging_path}' already exists, skipping test_prompts_errordetection."
+        )
+        return
+    PROMPT_ZS = "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nQ: Is there an error in {attr}?\n{context}\n\nA: "
+    PROMPT_FS = "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nQ: Is there an error in {attr}?\n{example}\n{context}\n\nA: "
+
+    dataset = Flights()
+
+    # first execute bloke entirely
+    for _ in range(n_iterations):
+        ed_theBloke = ErrorDetection(
+            dataset=dataset, logging_path=logging_path, model_source="bloke"
+        )
+        ed_theBloke.zero_shot(
+            n_samples=n_samples,
+            experiment_name="Model Comparison Flight Data",
+            experiment_namespace="Bloke.ErrorDetection.ZeroShot.CustomDataset",
+            grammar=ErrorDetection.GRAMMAR_YES_OR_NO,
+            prompt_template=PROMPT_ZS,
+        )
+        ed_theBloke.few_shot(
+            n_samples=n_samples,
+            experiment_name="Model Comparison Flight Data",
+            experiment_namespace="Bloke.ErrorDetection.FewShot.CustomDataset",
+            example_count=n_examples,
+            q_and_A=True,
+            grammar=ErrorDetection.GRAMMAR_YES_OR_NO,
+            prompt_template=PROMPT_FS,
+        )
+
+    # then execute meta entirely
+    # NOTICE: the other way around apparently causes errors
+    for _ in range(n_iterations):
+        ed_meta = ErrorDetection(
+            dataset=dataset, logging_path=logging_path, model_source="meta"
+        )
+        ed_meta.zero_shot(
+            n_samples=n_samples,
+            experiment_name="Model Comparison Flight Data",
+            experiment_namespace="Meta.ErrorDetection.ZeroShot.CustomDataset",
+            prompt_template=PROMPT_ZS,
+        )
+        ed_meta.few_shot(
+            n_samples=n_samples,
+            experiment_name="Model Comparison Flight Data",
+            experiment_namespace="Meta.ErrorDetection.FewShot.CustomDataset",
+            example_count=n_examples,
+            q_and_A=True,
+            prompt_template=PROMPT_FS,
+        )
+
 
 # Experiment 3: Custom Dataset
 def test_errorDetection_customDataset(
@@ -381,8 +450,14 @@ def test_duplicateDetection_different_grammar(
 if __name__ == "__main__":
     # test_errorDetection_prompts(logging_path="keep_logs/test_promts_meta", n_iterations=3)
     # test_errorDetection_prompts(logging_path="keep_logs/tiny_throwaway_promts_test",n_iterations=1,n_samples=3,n_examples=2)
+    test_errorDetection_Meta_vs_Bloke_flights_data(
+        logging_path="keep_logs/test_ed_Meta_vs_Bloke_flights",
+        n_iterations=1,
+        n_samples=1,
+        n_examples=5,
+    )
     test_errorDetection_Meta_vs_Bloke(
-        logging_path="keep_logs/test_ed_Meta_vs_Bloke",
+        logging_path="keep_logs/test_ed_Meta_vs_Bloke_good_prompt_QA",
         skip_meta=False,
         skip_bloke=False,
         n_iterations=3,
