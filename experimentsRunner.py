@@ -142,7 +142,7 @@ def test_errorDetection_Meta_vs_Bloke(
     n_samples=20,
     n_examples=5,
     skip_meta: bool = False,
-    skip_bloke: bool = False
+    skip_bloke: bool = False,
 ):
     """Excecutes an experiment to test the performance of both the Meta model and the theBloke model.
 
@@ -157,6 +157,8 @@ def test_errorDetection_Meta_vs_Bloke(
             f"The directory '{logging_path}' already exists, skipping test_prompts_errordetection."
         )
         return
+    PROMPT_ZS = "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nQ: Is there an error in {attr}?\n{context}\n\nA: "
+    PROMPT_FS = "You are a helpful assistant who is great in finding errors in tabular data. You always answer in a single word, either yes or no.\n\nQ: Is there an error in {attr}?\n{example}\n{context}\n\nA: "
     clean_dataframe = pd.read_csv("data/error_detection/custom/clean_dataframe.csv")
     examples_clean_data = pd.read_csv(
         "data/error_detection/custom/examples_clean_dataframe.csv"
@@ -186,8 +188,8 @@ def test_errorDetection_Meta_vs_Bloke(
         },
     ]
 
-    # first execute meta entirely
-    if(not skip_meta):
+    # first execute bloke entirely
+    if not skip_bloke:
         for _ in range(n_iterations):
             for exp in experiment_datasets:
                 dataset = CustomDataSet(
@@ -195,41 +197,15 @@ def test_errorDetection_Meta_vs_Bloke(
                     clean_data=clean_dataframe,
                     name=exp["name"],
                 )
-                ed_meta = ErrorDetection(dataset=dataset, logging_path=logging_path, model_source="meta")
-                ed_meta.zero_shot(
-                    n_samples=n_samples,
-                    experiment_name=exp["name"],
-                    experiment_namespace="Meta.ErrorDetection.ZeroShot.CustomDataset",
+                ed_theBloke = ErrorDetection(
+                    dataset=dataset, logging_path=logging_path, model_source="bloke"
                 )
-                ed_meta.few_shot(
-                    n_samples=n_samples,
-                    experiment_name=exp["name"],
-                    experiment_namespace="Meta.ErrorDetection.FewShot.CustomDataset",
-                    example_count=n_examples,
-                    custom_examples_dataset=CustomDataSet(
-                        dirty_data=pd.read_csv(exp["example_path"]),
-                        clean_data=examples_clean_data,
-                        name=exp["name"],
-                    ),
-                    q_and_A = False,
-                )
-            
-    # then execute theBloke entirely
-    # NOTICE: the other way around apparently causes errors
-    if(not skip_bloke):
-        for _ in range(n_iterations):
-            for exp in experiment_datasets:
-                dataset = CustomDataSet(
-                    dirty_data=pd.read_csv(exp["dirty_path"]),
-                    clean_data=clean_dataframe,
-                    name=exp["name"],
-                )
-                ed_theBloke = ErrorDetection(dataset=dataset, logging_path=logging_path, model_source="bloke")
                 ed_theBloke.zero_shot(
                     n_samples=n_samples,
                     experiment_name=exp["name"],
                     experiment_namespace="Bloke.ErrorDetection.ZeroShot.CustomDataset",
-                    grammar=ErrorDetection.GRAMMAR_YES_OR_NO
+                    grammar=ErrorDetection.GRAMMAR_YES_OR_NO,
+                    prompt_template=PROMPT_ZS,
                 )
                 ed_theBloke.few_shot(
                     n_samples=n_samples,
@@ -241,8 +217,42 @@ def test_errorDetection_Meta_vs_Bloke(
                         clean_data=examples_clean_data,
                         name=exp["name"],
                     ),
-                    q_and_A = False,
-                    grammar=ErrorDetection.GRAMMAR_YES_OR_NO
+                    q_and_A=False,
+                    grammar=ErrorDetection.GRAMMAR_YES_OR_NO,
+                    prompt_template=PROMPT_FS,
+                )
+
+    # then execute meta entirely
+    # NOTICE: the other way around apparently causes errors
+    if not skip_meta:
+        for _ in range(n_iterations):
+            for exp in experiment_datasets:
+                dataset = CustomDataSet(
+                    dirty_data=pd.read_csv(exp["dirty_path"]),
+                    clean_data=clean_dataframe,
+                    name=exp["name"],
+                )
+                ed_meta = ErrorDetection(
+                    dataset=dataset, logging_path=logging_path, model_source="meta"
+                )
+                ed_meta.zero_shot(
+                    n_samples=n_samples,
+                    experiment_name=exp["name"],
+                    experiment_namespace="Meta.ErrorDetection.ZeroShot.CustomDataset",
+                    prompt_template=PROMPT_ZS,
+                )
+                ed_meta.few_shot(
+                    n_samples=n_samples,
+                    experiment_name=exp["name"],
+                    experiment_namespace="Meta.ErrorDetection.FewShot.CustomDataset",
+                    example_count=n_examples,
+                    custom_examples_dataset=CustomDataSet(
+                        dirty_data=pd.read_csv(exp["example_path"]),
+                        clean_data=examples_clean_data,
+                        name=exp["name"],
+                    ),
+                    q_and_A=False,
+                    prompt_template=PROMPT_FS,
                 )
 
 # Experiment 3: Custom Dataset
@@ -369,9 +379,16 @@ def test_duplicateDetection_different_grammar(
 
 
 if __name__ == "__main__":
-    test_errorDetection_prompts(logging_path="keep_logs/test_promts_meta", n_iterations=3)
+    # test_errorDetection_prompts(logging_path="keep_logs/test_promts_meta", n_iterations=3)
     # test_errorDetection_prompts(logging_path="keep_logs/tiny_throwaway_promts_test",n_iterations=1,n_samples=3,n_examples=2)
-    # test_errorDetection_Meta_vs_Bloke(logging_path="keep_logs/test_ed_Meta_vs_Bloke_only_Bloke", skip_meta=False, skip_bloke=False)
+    test_errorDetection_Meta_vs_Bloke(
+        logging_path="keep_logs/test_ed_Meta_vs_Bloke",
+        skip_meta=False,
+        skip_bloke=False,
+        n_iterations=3,
+        n_samples=200,
+        n_examples=5,
+    )
     # test_errorDetection_customDataset(logging_path="keep_logs/test_ed_customDataset")
     
     # test_duplicateDetection_different_grammar(logging_path="keep_logs/dd_grammar")
